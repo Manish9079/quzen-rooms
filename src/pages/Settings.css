@@ -1,0 +1,8 @@
+.qz-settings { padding: 56px 0 100px; }
+.qz-settings__inner { max-width: 640px; margin: 0 auto; }
+.qz-settings__intro h1 { font-size: clamp(26px, 3.4vw, 34px); margin-top: 12px; }
+.qz-settings__intro p { margin-top: 12px; font-size: 14.5px; }
+.qz-settings__group { padding: 26px 28px; margin-top: 26px; }
+.qz-settings__group h2 { display: flex; align-items: center; gap: 8px; font-size: 15.5px; margin-bottom: 6px; padding-bottom: 12px; border-bottom: 1px solid var(--qz-gray-100); }
+.qz-settings__group > div + div { border-top: 1px solid var(--qz-gray-100); }
+.qz-settings__note { font-size: 13.5px; margin-top: 14px; }

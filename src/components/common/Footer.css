@@ -1,0 +1,8 @@
+.qz-footer { margin-top: 100px; padding-top: 56px; border-top: 1px solid rgba(184, 209, 197, 0.4); }
+.qz-footer__inner { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 40px; padding-bottom: 36px; }
+.qz-footer__brand p { max-width: 240px; margin-top: 12px; font-size: 14px; }
+.qz-footer__cols { display: flex; gap: 64px; }
+.qz-footer__cols h4 { font-size: 13px; color: var(--qz-ink-700); margin-bottom: 14px; }
+.qz-footer__cols a { display: block; font-size: 14px; color: var(--qz-gray-500); margin-bottom: 10px; transition: color var(--qz-t-fast); }
+.qz-footer__cols a:hover { color: var(--qz-emerald-600); }
+.qz-footer__bottom { padding: 20px 0; border-top: 1px solid rgba(184, 209, 197, 0.3); font-size: 13px; color: var(--qz-gray-400); }

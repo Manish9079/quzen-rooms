@@ -1,0 +1,59 @@
+.qz-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  font-family: var(--qz-font-body);
+  font-weight: 600;
+  border-radius: var(--qz-r-pill);
+  transition: transform var(--qz-t-fast) var(--qz-ease), box-shadow var(--qz-t-fast) var(--qz-ease), background var(--qz-t-fast) var(--qz-ease), color var(--qz-t-fast) var(--qz-ease);
+  white-space: nowrap;
+}
+.qz-btn:active { transform: translateY(1px) scale(0.98); }
+.qz-btn--full { width: 100%; }
+
+.qz-btn--sm { padding: 8px 16px; font-size: 13.5px; }
+.qz-btn--md { padding: 12px 22px; font-size: 15px; }
+.qz-btn--lg { padding: 16px 30px; font-size: 16.5px; }
+
+.qz-btn--primary {
+  background: var(--qz-grad-brand);
+  color: #fff;
+  box-shadow: 0 10px 24px -8px rgba(14, 136, 98, 0.55), 0 2px 6px rgba(14,136,98,0.25);
+}
+.qz-btn--primary:hover { box-shadow: 0 14px 30px -8px rgba(14, 136, 98, 0.62), 0 2px 8px rgba(14,136,98,0.3); transform: translateY(-1px); }
+
+.qz-btn--secondary {
+  background: var(--qz-white-soft);
+  color: var(--qz-ink-800);
+  box-shadow: var(--qz-shadow-raised-sm);
+}
+.qz-btn--secondary:hover { color: var(--qz-emerald-600); }
+.qz-btn--secondary.qz-btn--active,
+.qz-btn--secondary:active { box-shadow: var(--qz-shadow-pressed); }
+
+.qz-btn--ghost {
+  background: transparent;
+  color: var(--qz-gray-500);
+}
+.qz-btn--ghost:hover { color: var(--qz-ink-800); background: var(--qz-gray-100); }
+
+.qz-btn--glass {
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  color: var(--qz-ink-800);
+  border: 1px solid rgba(255,255,255,0.6);
+}
+.qz-btn--glass:hover { background: rgba(255,255,255,0.7); }
+
+.qz-btn--danger {
+  background: linear-gradient(135deg, #F0716B, #D64545);
+  color: #fff;
+  box-shadow: 0 10px 22px -8px rgba(214, 69, 69, 0.55);
+}
+.qz-btn--danger:hover { box-shadow: 0 14px 28px -8px rgba(214, 69, 69, 0.6); }
+
+.qz-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }

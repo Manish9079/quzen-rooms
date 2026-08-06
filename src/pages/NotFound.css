@@ -1,0 +1,7 @@
+.qz-notfound {
+  min-height: calc(100dvh - var(--qz-nav-h));
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: 14px; padding: 40px 20px;
+}
+.qz-notfound h1 { font-size: 30px; margin-top: 6px; }
+.qz-notfound p { max-width: 340px; margin-bottom: 10px; }

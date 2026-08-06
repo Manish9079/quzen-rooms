@@ -1,0 +1,170 @@
+// Quzen Rooms — Prisma schema
+// Run `npx prisma generate` after `npm install` (needs internet access to
+// Prisma's engine CDN — see README "Environment notes" for why this sandbox
+// could not run that command itself).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum RoomCategory {
+  STUDY
+  GAMING
+  ANIME
+  TECHNOLOGY
+  CODING
+  MUSIC
+  CHILL
+  OTHER
+}
+
+enum ParticipantRole {
+  HOST
+  CO_HOST
+  MEMBER
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  displayName  String
+  email        String   @unique
+  passwordHash String
+  avatar       String?
+  bio          String?
+  onlineStatus Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  hostedRooms   Room[]            @relation("RoomHost")
+  participation RoomParticipant[]
+  messages      Message[]
+  refreshTokens RefreshToken[]
+
+  friendRequestsSent     Friendship[] @relation("FriendshipRequester")
+  friendRequestsReceived Friendship[] @relation("FriendshipAddressee")
+
+  blockedUsers   BlockedUser[] @relation("Blocker")
+  blockedByUsers BlockedUser[] @relation("Blocked")
+
+  @@map("users")
+}
+
+model Room {
+  id                  String       @id @default(uuid())
+  code                String       @unique
+  name                String
+  description         String?
+  category            RoomCategory @default(OTHER)
+  isPrivate           Boolean      @default(false)
+  passwordHash        String?
+  maxParticipants     Int          @default(20)
+  chatEnabled         Boolean      @default(true)
+  videoEnabled        Boolean      @default(true)
+  screenShareEnabled  Boolean      @default(true)
+  isLocked            Boolean      @default(false)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  closedAt            DateTime?
+
+  hostId String
+  host   User   @relation("RoomHost", fields: [hostId], references: [id], onDelete: Cascade)
+
+  participants RoomParticipant[]
+  messages     Message[]
+
+  @@index([category])
+  @@index([isPrivate])
+  @@index([hostId])
+  @@map("rooms")
+}
+
+model RoomParticipant {
+  id       String          @id @default(uuid())
+  role     ParticipantRole @default(MEMBER)
+  joinedAt DateTime        @default(now())
+  leftAt   DateTime?
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+  @@map("room_participants")
+}
+
+model Message {
+  id        String    @id @default(uuid())
+  body      String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, createdAt])
+  @@map("messages")
+}
+
+model RefreshToken {
+  id              String    @id @default(uuid())
+  tokenHash       String    @unique
+  expiresAt       DateTime
+  createdAt       DateTime  @default(now())
+  revokedAt       DateTime?
+  replacedByToken String?
+  userAgent       String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Friendship {
+  id        String           @id @default(uuid())
+  status    FriendshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  requesterId String
+  requester   User   @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+
+  addresseeId String
+  addressee   User   @relation("FriendshipAddressee", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+  @@map("friendships")
+}
+
+model BlockedUser {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  blockerId String
+  blocker   User   @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+
+  blockedId String
+  blocked   User   @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@map("blocked_users")
+}

@@ -1,0 +1,56 @@
+.qz-room-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 16px 22px;
+  background: rgba(13, 31, 25, 0.65);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  flex-wrap: wrap;
+}
+.qz-room-header__left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.qz-room-header__left h1 { font-size: 17px; color: #EAFBF3; font-family: var(--qz-font-display); }
+
+.qz-visibility-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700;
+  padding: 4px 10px; border-radius: var(--qz-r-pill);
+  background: rgba(63, 190, 139, 0.18); color: #7DE0B8;
+}
+.qz-visibility-pill--private { background: rgba(240,166,60,0.16); color: #F0C25C; }
+.qz-visibility-pill--locked { background: rgba(225,91,91,0.16); color: #F0A5A5; }
+
+.qz-room-header__right { display: flex; align-items: center; gap: 10px; }
+.qz-room-header__lock {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 14px;
+  border-radius: var(--qz-r-pill);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.04);
+  color: #EAFBF3; font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+}
+.qz-room-header__lock:hover { background: rgba(255,255,255,0.1); }
+
+.qz-conn { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; }
+.qz-conn--connected { color: #7DE0B8; }
+.qz-conn--connecting { color: #E0C25C; }
+.qz-conn--reconnecting { color: #F0A5A5; }
+.qz-spin { animation: qz-spin 1s linear infinite; }
+@keyframes qz-spin { to { transform: rotate(360deg); } }
+
+.qz-room-header__invite {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--qz-r-pill);
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: #EAFBF3; font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+  transition: background var(--qz-t-fast);
+}
+.qz-room-header__invite:hover { background: rgba(255,255,255,0.12); }
+.qz-room-header__code { font-family: var(--qz-font-mono); color: var(--qz-mint-300); }
+
+@media (max-width: 640px) {
+  .qz-room-header__left h1 { font-size: 15px; }
+  .qz-room-header__code { display: none; }
+}

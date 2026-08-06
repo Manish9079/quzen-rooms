@@ -1,0 +1,49 @@
+.qz-nav {
+  position: sticky; top: 0; z-index: 50;
+  height: var(--qz-nav-h);
+  display: flex; align-items: center;
+  background: rgba(251, 253, 252, 0.72);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid rgba(184, 209, 197, 0.35);
+}
+.qz-nav__inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.qz-nav__brand { display: flex; }
+
+.qz-nav__links { display: flex; align-items: center; gap: 6px; }
+.qz-nav__link {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 16px;
+  border-radius: var(--qz-r-pill);
+  font-weight: 600; font-size: 14.5px;
+  color: var(--qz-gray-500);
+  transition: background var(--qz-t-fast), color var(--qz-t-fast);
+}
+.qz-nav__link:hover { color: var(--qz-emerald-600); background: var(--qz-mint-50); }
+.qz-nav__link--active { color: var(--qz-emerald-700); background: var(--qz-mint-100); }
+
+.qz-nav__actions { display: flex; align-items: center; gap: 10px; }
+.qz-nav__avatar { display: flex; margin-left: 2px; }
+.qz-nav__mobile-actions { display: none; }
+.qz-nav__burger { display: none; background: none; border: none; color: var(--qz-ink-800); cursor: pointer; }
+
+@media (max-width: 880px) {
+  .qz-nav__actions { display: none; }
+  .qz-nav__burger { display: flex; }
+  .qz-nav__links {
+    position: fixed; top: var(--qz-nav-h); left: 0; right: 0;
+    flex-direction: column; align-items: stretch;
+    background: rgba(251, 253, 252, 0.98);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(184, 209, 197, 0.35);
+    padding: 14px 18px 22px;
+    gap: 4px;
+    transform: translateY(-130%);
+    opacity: 0;
+    transition: transform var(--qz-t-med) var(--qz-ease), opacity var(--qz-t-med) var(--qz-ease);
+    box-shadow: 0 20px 30px -20px rgba(10,60,45,0.25);
+  }
+  .qz-nav__links--open { transform: translateY(0); opacity: 1; }
+  .qz-nav__link { padding: 13px 14px; }
+  .qz-nav__mobile-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+}

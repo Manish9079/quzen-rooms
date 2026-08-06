@@ -1,0 +1,23 @@
+.qz-avatar {
+  position: relative;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--qz-font-display);
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(10, 60, 45, 0.22), inset 0 1px 1px rgba(255,255,255,0.35);
+  transition: box-shadow var(--qz-t-med) var(--qz-ease);
+}
+
+.qz-avatar--speaking {
+  box-shadow: 0 0 0 4px rgba(47, 190, 143, 0.35), 0 4px 14px rgba(10, 60, 45, 0.28);
+  animation: qz-speak-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes qz-speak-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(47, 190, 143, 0.30), 0 4px 14px rgba(10, 60, 45, 0.28); }
+  50% { box-shadow: 0 0 0 7px rgba(47, 190, 143, 0.16), 0 4px 14px rgba(10, 60, 45, 0.28); }
+}

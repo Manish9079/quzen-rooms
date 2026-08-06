@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: quzen-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: quzen_rooms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - quzen_pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build: ./server
+    image: quzen-rooms-server:latest
+    container_name: quzen-rooms-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CLIENT_URL: http://localhost:80
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/quzen_rooms?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set a real secret in .env}
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN_DAYS: 30
+      COOKIE_DOMAIN: localhost
+      COOKIE_SECURE: "false"
+    ports:
+      - "4000:4000"
+
+  quzen-rooms:
+    build: .
+    image: quzen-rooms-frontend:latest
+    container_name: quzen-rooms-frontend
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "80:80"
+
+volumes:
+  quzen_pgdata:

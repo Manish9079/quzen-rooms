@@ -1,0 +1,96 @@
+/* ===================================================================
+   QUZEN ROOMS — DESIGN TOKENS
+   Palette: White / Mint / Emerald / Teal / Soft Gray
+   Signature: "Liquid Orb" — a soft morphing glass sphere representing
+   a room's presence. Reused as room avatars, status glows, loaders.
+=================================================================== */
+
+:root {
+  /* ---- Color: base surfaces ---- */
+  --qz-white:        #FBFDFC;
+  --qz-white-soft:   #F3F8F6;
+  --qz-surface:      #EFF6F3;
+  --qz-surface-2:    #E7F1EC;
+
+  /* ---- Color: mint / emerald / teal ramp ---- */
+  --qz-mint-50:  #EAF8F1;
+  --qz-mint-100: #D3F1E2;
+  --qz-mint-200: #A9E4C7;
+  --qz-mint-300: #7DD6AC;
+  --qz-emerald-400: #3FBE8B;
+  --qz-emerald-500: #16A374;   /* primary brand */
+  --qz-emerald-600: #0E8862;
+  --qz-emerald-700: #0A6B4E;
+  --qz-teal-300:  #7FD8CE;
+  --qz-teal-500:  #34A99B;
+
+  /* ---- Color: ink / gray (green-cast neutrals) ---- */
+  --qz-ink-900: #0D1F19;
+  --qz-ink-800: #163029;
+  --qz-ink-700: #223F36;
+  --qz-ink-600: #3A544A;
+  --qz-gray-500: #64796F;
+  --qz-gray-400: #8A9C92;
+  --qz-gray-300: #B7C6BE;
+  --qz-gray-200: #D8E4DE;
+  --qz-gray-100: #ECF3EF;
+
+  /* ---- Semantic ---- */
+  --qz-danger: #E15B5B;
+  --qz-warning: #E0A63C;
+  --qz-live: #2FBE8F;
+  --qz-info: #3E9BD1;
+
+  /* ---- Gradients ---- */
+  --qz-grad-brand: linear-gradient(135deg, #1FCB92 0%, #0E8862 55%, #0A6B4E 100%);
+  --qz-grad-mint: linear-gradient(160deg, #EAF8F1 0%, #D3F1E2 45%, #A9E4C7 100%);
+  --qz-grad-glass: linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 100%);
+  --qz-grad-orb: radial-gradient(circle at 32% 28%, #E9FFF6 0%, #7DD6AC 38%, #16A374 68%, #0A6B4E 100%);
+  --qz-grad-bg: radial-gradient(circle at 12% -10%, #EAF8F1 0%, transparent 45%),
+                radial-gradient(circle at 100% 0%, #DDF3E9 0%, transparent 40%),
+                linear-gradient(180deg, #FBFDFC 0%, #F3F8F6 100%);
+
+  /* ---- Typography ---- */
+  --qz-font-display: 'Sora', 'Segoe UI', sans-serif;
+  --qz-font-body: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+  --qz-font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+  /* ---- Radii ---- */
+  --qz-r-sm: 10px;
+  --qz-r-md: 16px;
+  --qz-r-lg: 22px;
+  --qz-r-xl: 28px;
+  --qz-r-pill: 999px;
+
+  /* ---- Shadows: neomorphic soft-extrude on --qz-white-soft ---- */
+  --qz-shadow-raised:
+    6px 6px 16px rgba(46, 79, 66, 0.10),
+    -6px -6px 16px rgba(255, 255, 255, 0.85);
+  --qz-shadow-raised-sm:
+    3px 3px 8px rgba(46, 79, 66, 0.09),
+    -3px -3px 8px rgba(255, 255, 255, 0.8);
+  --qz-shadow-pressed:
+    inset 3px 3px 7px rgba(46, 79, 66, 0.12),
+    inset -3px -3px 7px rgba(255, 255, 255, 0.7);
+  --qz-shadow-float:
+    0 20px 40px -14px rgba(10, 60, 45, 0.22),
+    0 4px 12px rgba(10, 60, 45, 0.06);
+  --qz-shadow-glass:
+    0 8px 32px rgba(13, 60, 45, 0.10),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+
+  /* ---- Motion ---- */
+  --qz-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --qz-ease-snap: cubic-bezier(0.5, 0, 0.1, 1);
+  --qz-t-fast: 150ms;
+  --qz-t-med: 280ms;
+  --qz-t-slow: 480ms;
+
+  /* ---- Layout ---- */
+  --qz-container: 1240px;
+  --qz-nav-h: 76px;
+}
+
+@media (prefers-color-scheme: dark) {
+  /* Reserved for future dark mode; V1 ships light theme per brief */
+}

@@ -1,0 +1,9 @@
+.qz-logo { display: inline-flex; align-items: center; gap: 10px; }
+.qz-logo__text {
+  font-family: var(--qz-font-display);
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--qz-ink-900);
+  letter-spacing: -0.01em;
+}
+.qz-logo__text span { color: var(--qz-emerald-500); }
