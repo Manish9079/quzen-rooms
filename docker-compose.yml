@@ -28,7 +28,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      CLIENT_URL: http://localhost:80
+      CLIENT_URL: http://localhost
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/quzen_rooms?schema=public
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set a real secret in .env}
       JWT_ACCESS_EXPIRES_IN: 15m
