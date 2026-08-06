@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - run: npm ci
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: server/package-lock.json
 
@@ -133,5 +133,5 @@ jobs:
             docker pull ghcr.io/${{ github.repository }}-frontend:latest
             docker pull ghcr.io/${{ github.repository }}-backend:latest
             docker compose -f /opt/quzen-rooms/docker-compose.yml up -d --force-recreate
-            npx prisma migrate deploy --schema /opt/quzen-rooms/server/prisma/schema.prisma
+            docker compose -f /opt/quzen-rooms/docker-compose.yml exec -T server npx prisma migrate deploy
             docker image prune -f
