@@ -105,8 +105,8 @@ jobs:
             VITE_API_URL=${{ vars.VITE_API_URL }}
             VITE_SOCKET_URL=${{ vars.VITE_SOCKET_URL }}
           tags: |
-            ghcr.io/${{ github.repository }}-frontend:latest
-            ghcr.io/${{ github.repository }}-frontend:${{ github.sha }}
+            ghcr.io/manish9079/quzen-rooms-frontend:latest
+            ghcr.io/manish9079/quzen-rooms-frontend:${{ github.sha }}
 
       - name: Build and push backend image
         uses: docker/build-push-action@v5
