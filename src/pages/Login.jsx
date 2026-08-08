@@ -19,7 +19,7 @@ export default function Login() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!identifier.trim() || !password) return setError('Enter your email/username and password.');
+    if (!identifier.trim() || !password) return setError('Enter your email and password.');
     setError('');
     setSubmitting(true);
     try {
@@ -44,7 +44,7 @@ export default function Login() {
         </div>
 
         <form className="qz-form-card qz-neu" onSubmit={handleSubmit}>
-          <Field label="Email or username" required id="identifier">
+          <Field label="Email" required id="identifier">
             <TextInput id="identifier" icon={Mail} placeholder="you@example.com" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" />
           </Field>
           <Field label="Password" required id="password">

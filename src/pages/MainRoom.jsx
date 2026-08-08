@@ -12,6 +12,7 @@ import Orb from '../components/common/Orb';
 import { useAuth } from '../context/AuthContext';
 import { useUser } from '../context/UserContext';
 import { useToast } from '../components/common/Toast';
+import { roomService } from '../services/roomService';
 import { socketService } from '../services/socketService';
 import { chatService } from '../services/chatService';
 import { mediaService } from '../services/mediaService';
@@ -58,6 +59,163 @@ export default function MainRoom() {
   useEffect(() => { socketIdByUserIdRef.current = socketIdByUserId; }, [socketIdByUserId]);
 
   useEffect(() => {
+  let cancelled = false;
+
+  async function loadRoom() {
+    try {
+      const { room: foundRoom } = await roomService.getRoom(code);
+
+      if (cancelled) return;
+
+      if (!foundRoom) {
+        setJoinError('Room not found.');
+        return;
+      }
+
+      setRoom(foundRoom);
+
+      const { members } = await roomService.getRoomMembers(foundRoom.id);
+
+if (cancelled) return;
+
+setParticipants(
+  members.map((member) => ({
+    user: {
+      id: member.userId,
+      displayName: member.displayName,
+    },
+    role: member.role || 'MEMBER',
+  }))
+);
+const { requests } =
+  await roomService.getWaitingRequests(foundRoom.id);
+
+if (cancelled) return;
+
+setWaitingList(
+  requests
+    .filter((request) => request.status === 'PENDING')
+    .map((request) => ({
+      id: request.id,
+      userId: request.userId,
+      displayName: request.displayName,
+      status: request.status,
+    }))
+);
+
+      addRecentRoom({
+        name: foundRoom.name,
+        code: foundRoom.code,
+        createdAgo: foundRoom.createdAt,
+      });
+
+      setConnectionStatus('connected');
+    } catch (err) {
+      if (!cancelled) {
+        setJoinError(err.message || 'Could not load this room.');
+      }
+    }
+  }
+
+  loadRoom();
+
+  return () => {
+    cancelled = true;
+  };
+}, [code, user.id, user.displayName, addRecentRoom]);
+useEffect(() => {
+  if (!room?.id) return undefined;
+
+  const unsubscribe = roomService.subscribeToRoomMembers(
+    room.id,
+
+    (member) => {
+      setParticipants((prev) => {
+        const exists = prev.some(
+          (p) => p.user.id === member.userId
+        );
+
+        if (exists) return prev;
+
+        return [
+          ...prev,
+          {
+            user: {
+              id: member.userId,
+              displayName: member.displayName,
+            },
+            role: member.role || 'MEMBER',
+          },
+        ];
+      });
+    },
+
+    (member) => {
+  setParticipants((prev) =>
+    prev.filter(
+      (p) => p.user.id !== member.userId
+    )
+  );
+
+  if (member.userId === user.id) {
+    showToast('You were removed from the room.', 'error');
+    navigate('/explore', { replace: true });
+  }
+}
+  );
+const unsubscribeWaiting =
+  roomService.subscribeToWaitingRequests(
+    room.id,
+
+    (request) => {
+      if (request.status !== 'PENDING') return;
+
+      setWaitingList((prev) => {
+        const exists = prev.some(
+          (item) => item.id === request.id
+        );
+
+        if (exists) return prev;
+
+        return [
+          ...prev,
+          {
+            id: request.id,
+            userId: request.userId,
+            displayName: request.displayName,
+            status: request.status,
+          },
+        ];
+      });
+    },
+
+    (request) => {
+      setWaitingList((prev) => {
+        if (request.status !== 'PENDING') {
+          return prev.filter(
+            (item) => item.id !== request.id
+          );
+        }
+
+        return prev.map((item) =>
+          item.id === request.id
+            ? {
+                id: request.id,
+                userId: request.userId,
+                displayName: request.displayName,
+                status: request.status,
+              }
+            : item
+        );
+      });
+    }
+  );
+return () => {
+  unsubscribe?.();
+  unsubscribeWaiting?.();
+};
+}, [room?.id, user.id, navigate, showToast]);
+  useEffect(() => {
     const cleanupDetectors = [];
     socketService.connect();
 
@@ -67,53 +225,15 @@ export default function MainRoom() {
     });
     const offDisconnect = socketService.on('disconnect', () => setConnectionStatus('reconnecting'));
 
-    const offJoined = socketService.on('room:joined', ({ room: r, messages: hist, participants: list }) => {
-      setRoom(r);
-      setMessages(hist);
-      setParticipants(list);
-      setWaitingForApproval(false);
-      addRecentRoom({ name: r.name, code: r.code, createdAgo: r.createdAt });
-      mediaService.startSignaling();
-    });
+   
 
-    const offWaiting = socketService.on('room:waiting', () => setWaitingForApproval(true));
-    const offRejected = socketService.on('room:joinRejected', ({ reason }) => {
-      setJoinError(reason || 'The host declined your request to join.');
-    });
-    const offRemovedYou = socketService.on('host:removedYou', () => {
-      showToast('The host removed you from this room.', 'error');
-      navigate('/explore');
-    });
+    
+   
+   
 
-    const offUserJoined = socketService.on('presence:userJoined', ({ participant }) => {
-      setParticipants((prev) => [...prev.filter((p) => p.user.id !== participant.user.id), participant]);
-    });
-    const offUserLeft = socketService.on('presence:userLeft', ({ userId }) => {
-      setParticipants((prev) => prev.filter((p) => p.user.id !== userId));
-    });
+   
 
-    const offMessage = chatService.onMessage((msg) => {
-      setMessages((prev) => [...prev, msg]);
-      if (!chatOpenRef.current && msg.author.id !== user.id) setUnreadChat((n) => n + 1);
-    });
-    const offTyping = chatService.onTyping(({ userId, username, isTyping }) => {
-      setTypingUsers((prev) => {
-        const next = { ...prev };
-        if (isTyping) next[userId] = username; else delete next[userId];
-        return next;
-      });
-    });
-    const offDeleted = chatService.onMessageDeleted(({ id }) => {
-      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, deleted: true, body: null } : m)));
-    });
-
-    const offRoomLocked = socketService.on('host:roomLocked', ({ isLocked }) => {
-      setRoom((prev) => (prev ? { ...prev, isLocked } : prev));
-    });
-    const offWaitingUpdate = socketService.on('host:waitingRoomUpdate', ({ waiting }) => setWaitingList(waiting));
-    const offRoleChanged = socketService.on('host:roleChanged', ({ participant }) => {
-      setParticipants((prev) => prev.map((p) => (p.user.id === participant.user.id ? participant : p)));
-    });
+   
 
     const offMediaState = socketService.on('media:state', ({ userId, socketId, micOn: m, cameraOn: c, screenSharing: s }) => {
       setMediaStateByUserId((prev) => ({ ...prev, [userId]: { micOn: m, cameraOn: c, screenSharing: s } }));
@@ -141,19 +261,43 @@ export default function MainRoom() {
       setRemoteStreams((prev) => { const next = new Map(prev); next.delete(socketId); return next; });
     };
 
-    socketService.emitAck('room:join', { code }).then((ack) => {
-      if (!ack.ok) setJoinError(ack.message || 'Could not join this room.');
-    });
+   socketService.emitAck('room:join', {
+  code,
+  userId: user.id,
+  username: user.username,
+  displayName: user.displayName,
+}).then((ack) => {
+  console.log('room:join ack:', ack);
+
+  if (!ack.ok) {
+    setJoinError(
+      ack.message || 'Could not connect to room media.'
+    );
+    return;
+  }
+
+  console.log('Starting WebRTC signaling...');
+  mediaService.startSignaling();
+});
+  
 
     return () => {
-      [offConnect, offDisconnect, offJoined, offWaiting, offRejected, offRemovedYou,
-        offUserJoined, offUserLeft, offMessage, offTyping, offDeleted, offRoomLocked, offWaitingUpdate, offRoleChanged,
-        offMediaState, offPeerJoined, offPeerOffer, offPeerDisconnected].forEach((off) => off?.());
-      cleanupDetectors.forEach((stop) => stop());
-      socketService.emitAck('room:leave', {});
-      mediaService.stopAll();
-      socketService.disconnect();
-    };
+  [
+    offConnect,
+    offDisconnect,
+    
+    offMediaState,
+    offPeerJoined,
+    offPeerOffer,
+    offPeerDisconnected,
+  ].forEach((off) => off?.());
+
+  cleanupDetectors.forEach((stop) => stop());
+
+  socketService.emitAck('room:leave', {});
+  mediaService.stopAll();
+  socketService.disconnect();
+};
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
 
@@ -169,114 +313,414 @@ export default function MainRoom() {
   const canModerate = myParticipant?.role === 'HOST' || myParticipant?.role === 'CO_HOST';
 
   async function handleToggleMic() {
-    try {
-      if (!localStream) {
-        const stream = await mediaService.getCamera({ audio: true, video: cameraOn });
-        setLocalStream(stream);
-        setMicOn(true);
-        mediaService.broadcastMediaState({ micOn: true, cameraOn, screenSharing: sharingScreen });
+  try {
+    if (!localStream) {
+      const stream = await mediaService.getCamera({
+        audio: true,
+        video: cameraOn,
+      });
+
+      setLocalStream(stream);
+      setMicOn(true);
+
+      mediaService.broadcastMediaState({
+        micOn: true,
+        cameraOn,
+        screenSharing: sharingScreen,
+      });
+    } else {
+      const next = !micOn;
+      const hasAudioTrack = localStream.getAudioTracks().length > 0;
+
+      if (next && !hasAudioTrack) {
+        await mediaService.addMicrophoneTrack(localStream);
       } else {
-        const next = !micOn;
-        mediaService.setTrackEnabled(localStream, 'audio', next);
-        setMicOn(next);
-        mediaService.broadcastMediaState({ micOn: next, cameraOn, screenSharing: sharingScreen });
+        mediaService.setTrackEnabled(
+          localStream,
+          'audio',
+          next
+        );
       }
-      setMediaError('');
-    } catch {
-      setMediaError("Microphone access was blocked. Allow it in your browser's site settings to talk.");
+
+      setMicOn(next);
+
+      mediaService.broadcastMediaState({
+        micOn: next,
+        cameraOn,
+        screenSharing: sharingScreen,
+      });
     }
+
+    setMediaError('');
+  } catch (err) {
+    console.error('Microphone error:', err);
+
+    setMediaError(
+      "Microphone access was blocked. Allow it in your browser's site settings to talk."
+    );
   }
+}
 
   async function handleToggleCamera() {
-    try {
+  try {
+    const next = !cameraOn;
+
+    // CAMERA ON
+    if (next) {
+      // No local stream yet
       if (!localStream) {
-        const stream = await mediaService.getCamera({ audio: micOn, video: true });
+        const stream = await mediaService.getCamera({
+          audio: micOn,
+          video: true,
+        });
+
         setLocalStream(stream);
-        setCameraOn(true);
-        mediaService.broadcastMediaState({ micOn, cameraOn: true, screenSharing: sharingScreen });
       } else {
-        const next = !cameraOn;
-        const hasVideoTrack = localStream.getVideoTracks().length > 0;
-        if (!hasVideoTrack && next) {
-          mediaService.stopStream(localStream);
-          const stream = await mediaService.getCamera({ audio: micOn, video: true });
-          setLocalStream(stream);
+        const videoTrack = localStream.getVideoTracks()[0];
+
+        if (videoTrack && videoTrack.readyState === 'live') {
+          videoTrack.enabled = true;
         } else {
-          mediaService.setTrackEnabled(localStream, 'video', next);
+          // Get ONLY camera — do not touch microphone
+          const cameraStream =
+            await navigator.mediaDevices.getUserMedia({
+              video: true,
+              audio: false,
+            });
+
+          const newVideoTrack =
+            cameraStream.getVideoTracks()[0];
+
+          localStream.addTrack(newVideoTrack);
+
+          // Send new camera track to existing peers
+          for (const pc of mediaService.peers.values()) {
+            const sender = pc
+              .getSenders()
+              .find((s) => s.track?.kind === 'video');
+
+            if (sender) {
+              await sender.replaceTrack(newVideoTrack);
+            } else {
+              pc.addTrack(newVideoTrack, localStream);
+            }
+          }
+
+          setLocalStream(
+            new MediaStream(localStream.getTracks())
+          );
         }
-        setCameraOn(next);
-        mediaService.broadcastMediaState({ micOn, cameraOn: next, screenSharing: sharingScreen });
       }
-      setMediaError('');
-    } catch {
-      setMediaError("Camera access was blocked. Allow it in your browser's site settings to show video.");
+
+      setCameraOn(true);
+
+      mediaService.broadcastMediaState({
+        micOn,
+        cameraOn: true,
+        screenSharing: sharingScreen,
+      });
     }
+
+    // CAMERA OFF
+    else {
+      const videoTrack =
+        localStream?.getVideoTracks()?.[0];
+
+      if (videoTrack) {
+        videoTrack.enabled = false;
+      }
+
+      setCameraOn(false);
+
+      mediaService.broadcastMediaState({
+        micOn,
+        cameraOn: false,
+        screenSharing: sharingScreen,
+      });
+    }
+
+    setMediaError('');
+  } catch (err) {
+    console.error('Camera error:', err);
+
+    setMediaError(
+      "Camera access was blocked. Allow it in your browser's site settings."
+    );
   }
+}
 
   async function handleToggleShare() {
-    try {
-      if (sharingScreen) {
-        mediaService.stopStream(screenStream);
-        setScreenStream(null);
-        setSharingScreen(false);
-        mediaService.broadcastMediaState({ micOn, cameraOn, screenSharing: false });
-      } else {
-        const stream = await mediaService.getScreenShare();
-        stream.getVideoTracks()[0].addEventListener('ended', () => {
-          setSharingScreen(false);
-          setScreenStream(null);
-          mediaService.broadcastMediaState({ micOn, cameraOn, screenSharing: false });
-        });
-        setScreenStream(stream);
-        setSharingScreen(true);
-        mediaService.broadcastMediaState({ micOn, cameraOn, screenSharing: true });
-        showToast('You are sharing your screen', 'info');
-      }
+  try {
+    // STOP SCREEN SHARE
+    if (sharingScreen) {
+      await mediaService.stopScreenShare();
+
+      setScreenStream(null);
+      setSharingScreen(false);
+
+      mediaService.broadcastMediaState({
+        micOn,
+        cameraOn,
+        screenSharing: false,
+      });
+
       setMediaError('');
-    } catch {
-      /* user cancelled the screen picker */
+      return;
+    }
+
+    // START SCREEN SHARE
+    const stream = await mediaService.getScreenShare();
+
+    await mediaService.startScreenShare(stream);
+
+    const screenTrack = stream.getVideoTracks()[0];
+
+    screenTrack.addEventListener('ended', async () => {
+      await mediaService.stopScreenShare();
+
+      setScreenStream(null);
+      setSharingScreen(false);
+
+      mediaService.broadcastMediaState({
+        micOn,
+        cameraOn,
+        screenSharing: false,
+      });
+    });
+
+    setScreenStream(stream);
+    setSharingScreen(true);
+
+    mediaService.broadcastMediaState({
+      micOn,
+      cameraOn,
+      screenSharing: true,
+    });
+
+    showToast('Screen sharing started.', 'info');
+    setMediaError('');
+  } catch (err) {
+    console.error('Screen share error:', err);
+
+    setMediaError(
+      'Could not share your screen. Please allow screen-sharing permission.'
+    );
+  }
+}
+  // ...upar existing code rahega
+
+
+useEffect(() => {
+  if (!room?.id) return undefined;
+
+  let cancelled = false;
+
+  async function loadChat() {
+    try {
+      const { messages: history } = await chatService.getHistory(room.id);
+
+      if (!cancelled) {
+        setMessages(history);
+      }
+    } catch (err) {
+      console.error('Could not load chat history:', err);
     }
   }
 
-  async function handleSendMessage(text) {
-    const ack = await chatService.send(text);
-    if (!ack?.ok) showToast(ack?.message || 'Could not send message.', 'error');
-  }
+  loadChat();
 
-  function handleCopyInvite() {
-    const link = `${window.location.origin}/join?code=${code}`;
-    navigator.clipboard?.writeText(link).catch(() => {});
-    showToast('Invite link copied to clipboard');
-  }
+  const unsubscribe = chatService.subscribeToMessages(
+    room.id,
+    (message) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === message.id)) {
+          return prev;
+        }
 
-  function handleLeave() {
+        return [...prev, message];
+      });
+
+      if (!chatOpenRef.current && message.userId !== user.id) {
+        setUnreadChat((n) => n + 1);
+      }
+    }
+  );
+
+  return () => {
+    cancelled = true;
+    unsubscribe?.();
+  };
+}, [room?.id, user.id]);
+
+async function handleSendMessage(text) {
+  if (!room?.id || !user) return;
+
+  try {
+    await chatService.send(
+      room.id,
+      user,
+      text
+    );
+  } catch (err) {
+    showToast(
+      err.message || 'Could not send message.',
+      'error'
+    );
+  }
+}
+
+ function handleCopyCode() {
+  navigator.clipboard?.writeText(room?.code || code).catch(() => {});
+  showToast('Room code copied to clipboard');
+}
+
+function handleCopyInvite() {
+  const link = `${window.location.origin}/join?code=${room?.code || code}`;
+  navigator.clipboard?.writeText(link).catch(() => {});
+  showToast('Invite link copied to clipboard');
+}
+
+  async function handleLeave() {
+  try {
+    if (room?.id && user?.id) {
+      await roomService.leaveRoom(room.id, user.id);
+    }
+
     navigate('/explore');
+  } catch (err) {
+    showToast(err.message || 'Could not leave room.', 'error');
   }
+}
+  async function handleDeleteRoom() {
+  if (!room?.id) return;
 
-  async function handleToggleLock() {
-    const ack = await socketService.emitAck(room?.isLocked ? 'host:unlockRoom' : 'host:lockRoom', {});
-    if (!ack.ok) showToast(ack.message || 'Could not update the room lock.', 'error');
+  const confirmed = window.confirm(
+    'Are you sure you want to delete this room?'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await roomService.deleteRoom(room.id);
+
+    showToast('Room deleted successfully.');
+    navigate('/explore', { replace: true });
+  } catch (err) {
+    showToast(err.message || 'Could not delete room.', 'error');
   }
+}
+  async function handleToggleLock() {
+  if (!room?.id) return;
+
+  try {
+    const nextLocked = !room.isLocked;
+
+    const { room: updatedRoom } =
+      await roomService.setRoomLock(room.id, nextLocked);
+
+    setRoom(updatedRoom);
+
+    showToast(
+      nextLocked ? 'Room locked.' : 'Room unlocked.'
+    );
+  } catch (err) {
+    showToast(
+      err.message || 'Could not update the room lock.',
+      'error'
+    );
+  }
+}
 
   const handleRemoveParticipant = useCallback(async (p) => {
-    const ack = await socketService.emitAck('host:removeParticipant', { userId: p.id });
-    if (!ack.ok) showToast(ack.message || 'Could not remove that participant.', 'error');
-  }, [showToast]);
+  if (!room?.id) return;
 
-  const handleToggleCoHost = useCallback(async (p) => {
-    const event = p.isCoHost ? 'host:removeCoHost' : 'host:setCoHost';
-    const ack = await socketService.emitAck(event, { userId: p.id });
-    if (!ack.ok) showToast(ack.message || 'Could not update that role.', 'error');
-  }, [showToast]);
+  try {
+    await roomService.removeMember(room.id, p.id);
 
-  const handleApproveWaiting = useCallback(async (userId) => {
-    const ack = await socketService.emitAck('host:approveWaiting', { userId });
-    if (!ack.ok) showToast(ack.message || 'Could not approve that user.', 'error');
-  }, [showToast]);
+    showToast('Participant removed.');
+  } catch (err) {
+    showToast(
+      err.message || 'Could not remove that participant.',
+      'error'
+    );
+  }
+}, [room?.id, showToast]);
+const handleToggleCoHost = useCallback(async (p) => {
+  if (!room?.id) return;
 
-  const handleRejectWaiting = useCallback(async (userId) => {
-    await socketService.emitAck('host:rejectWaiting', { userId });
-  }, []);
+  try {
+    const nextRole = p.isCoHost ? 'MEMBER' : 'CO_HOST';
+
+    await roomService.setMemberRole(
+      room.id,
+      p.id,
+      nextRole
+    );
+
+    setParticipants((prev) =>
+      prev.map((participant) =>
+        participant.user.id === p.id
+          ? { ...participant, role: nextRole }
+          : participant
+      )
+    );
+
+    showToast(
+      nextRole === 'CO_HOST'
+        ? 'Participant is now a co-host.'
+        : 'Co-host removed.'
+    );
+  } catch (err) {
+    showToast(
+      err.message || 'Could not update that role.',
+      'error'
+    );
+  }
+}, [room?.id, showToast]);
+
+ const handleApproveWaiting = useCallback(async (userId) => {
+  if (!room?.id) return;
+
+  const request = waitingList.find(
+    (item) => item.userId === userId
+  );
+
+  if (!request) return;
+
+  try {
+    await roomService.approveWaitingRequest(
+      request.id,
+      room.id,
+      request.userId,
+      request.displayName
+    );
+
+    showToast('User approved.');
+  } catch (err) {
+    showToast(
+      err.message || 'Could not approve that user.',
+      'error'
+    );
+  }
+}, [room?.id, waitingList, showToast]);
+
+const handleRejectWaiting = useCallback(async (userId) => {
+  const request = waitingList.find(
+    (item) => item.userId === userId
+  );
+
+  if (!request) return;
+
+  try {
+    await roomService.rejectWaitingRequest(request.id);
+    showToast('Join request rejected.');
+  } catch (err) {
+    showToast(
+      err.message || 'Could not reject that user.',
+      'error'
+    );
+  }
+}, [waitingList, showToast]);
 
   const displayParticipants = useMemo(() => participants.map((p) => {
     const isMe = p.user.id === user.id;
@@ -293,19 +737,20 @@ export default function MainRoom() {
       isCoHost: p.role === 'CO_HOST',
       muted: !media.micOn,
       cameraOn: media.cameraOn,
+      screenSharing: media.screenSharing,
       speaking: Boolean(speakingByUserId[p.user.id]),
       connected: true,
       _stream: stream,
     };
   }), [participants, user.id, micOn, cameraOn, sharingScreen, mediaStateByUserId, socketIdByUserId, localStream, remoteStreams, speakingByUserId]);
 
-  const chatMessages = useMemo(() => messages.map((m) => ({
-    id: m.id,
-    text: m.deleted ? '(message deleted)' : m.body,
-    author: m.author.displayName,
-    color: colorFromId(m.author.id),
-    self: m.author.id === user.id,
-  })), [messages, user.id]);
+ const chatMessages = useMemo(() => messages.map((m) => ({
+  id: m.id,
+  text: m.body,
+  author: m.displayName,
+  color: colorFromId(m.userId),
+  self: m.userId === user.id,
+})), [messages, user.id]);
 
   const typingLabel = useMemo(() => {
     const names = Object.values(typingUsers);
@@ -347,7 +792,7 @@ export default function MainRoom() {
   return (
     <div className="qz-room">
       <RoomHeader
-        room={room} connectionStatus={connectionStatus} onCopyInvite={handleCopyInvite}
+        room={room} connectionStatus={connectionStatus} onCopyCode={handleCopyCode} onCopyInvite={handleCopyInvite}
         canModerate={canModerate} isLocked={room.isLocked} onToggleLock={handleToggleLock}
       />
 
@@ -382,27 +827,62 @@ export default function MainRoom() {
         onMore={() => setMoreOpen(true)}
       />
 
-      <ChatPanel
-        open={chatOpen} onClose={() => setChatOpen(false)} messages={chatMessages} onSend={handleSendMessage}
-        myName={user.displayName} onTypingChange={chatService.setTyping} typingLabel={typingLabel}
-      />
+    <ChatPanel
+  open={chatOpen}
+  onClose={() => setChatOpen(false)}
+  messages={chatMessages}
+  onSend={handleSendMessage}
+  myName={user.displayName}
+/>
       <ParticipantsPanel
         open={participantsOpen} onClose={() => setParticipantsOpen(false)}
         participants={displayParticipants} colorFor={(p) => colorFromId(p.id)} onCopyInvite={handleCopyInvite}
         canModerate={canModerate} onRemove={handleRemoveParticipant} onToggleCoHost={handleToggleCoHost}
         waitingList={waitingList} onApprove={handleApproveWaiting} onReject={handleRejectWaiting}
       />
+<Modal
+  open={moreOpen}
+  onClose={() => setMoreOpen(false)}
+  title="Room options"
+>
+  <p className="qz-room__more-note">
+    <Settings2 size={13} strokeWidth={2.3} />
+    Personal audio/video preferences live in your account Settings page.
+  </p>
 
-      <Modal open={moreOpen} onClose={() => setMoreOpen(false)} title="Room options">
-        <p className="qz-room__more-note"><Settings2 size={13} strokeWidth={2.3} /> Personal audio/video preferences live in your account Settings page.</p>
-        {room.description && <p className="qz-room__more-desc">{room.description}</p>}
-      </Modal>
-    </div>
-  );
+  {room.description && (
+    <p className="qz-room__more-desc">
+      {room.description}
+    </p>
+  )}
+
+  {room.ownerId === user.id && (
+    <Button onClick={handleDeleteRoom}>
+      Delete Room
+    </Button>
+  )}
+</Modal>
+
+</div>
+);
 }
 
 function ScreenPreview({ stream }) {
   const ref = useRef(null);
-  useEffect(() => { if (ref.current && stream) ref.current.srcObject = stream; }, [stream]);
-  return <video ref={ref} autoPlay playsInline muted className="qz-room__spotlight-video" />;
+
+  useEffect(() => {
+    if (ref.current && stream) {
+      ref.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  return (
+    <video
+      ref={ref}
+      autoPlay
+      playsInline
+      muted
+      className="qz-room__spotlight-video"
+    />
+  );
 }

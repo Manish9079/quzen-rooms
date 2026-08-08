@@ -29,38 +29,38 @@ async function completeJoin(io, socket, code, password, { bypassLock = false } =
 }
 
 export function registerChatHandlers(io, socket) {
-  socket.on('room:join', async ({ code, password } = {}, ack) => {
-    try {
-      const roomRecord = await prisma.room.findUnique({ where: { code: (code || '').toUpperCase() } });
-      if (!roomRecord) return ack?.({ ok: false, message: 'Room not found.' });
+  socket.on('room:join', async ({ code, userId, username, displayName } = {}, ack) => {
+  try {
+    const roomCode = (code || '').trim().toUpperCase();
 
-      const alreadyIn = await prisma.roomParticipant.findFirst({
-        where: { roomId: roomRecord.id, userId: socket.user.id, leftAt: null },
-      });
-
-      // Locked rooms hold new (non-member, non-host) joiners in a waiting
-      // room instead of admitting them immediately — the host approves or
-      // rejects them via host:approveWaiting / host:rejectWaiting.
-      if (roomRecord.isLocked && !alreadyIn) {
-        presenceStore.addToWaitingRoom(roomRecord.id, socket.user.id, {
-          username: socket.user.username,
-          displayName: socket.user.displayName,
-          socketId: socket.id,
-        });
-        socket.data.waitingRoomId = roomRecord.id;
-        socket.emit('room:waiting', { code: roomRecord.code });
-        io.to(roomRecord.id).emit('host:waitingRoomUpdate', {
-          waiting: presenceStore.listWaitingRoom(roomRecord.id),
-        });
-        return ack?.({ ok: true, waiting: true });
-      }
-
-      await completeJoin(io, socket, code, password);
-      ack?.({ ok: true, waiting: false });
-    } catch (err) {
-      ack?.({ ok: false, message: err.message || 'Could not join the room.' });
+    if (!roomCode) {
+      return ack?.({ ok: false, message: 'Room code is required.' });
     }
-  });
+
+    socket.user = {
+      id: userId || socket.id,
+      username: username || 'user',
+      displayName: displayName || username || 'User',
+    };
+
+    socket.data.roomId = roomCode;
+    socket.data.roomCode = roomCode;
+
+    socket.join(roomCode);
+
+    presenceStore.addToRoom(roomCode, socket.id, {
+      userId: socket.user.id,
+      username: socket.user.username,
+    });
+
+    ack?.({ ok: true });
+  } catch (err) {
+    ack?.({
+      ok: false,
+      message: err.message || 'Could not connect to room media.',
+    });
+  }
+});
 
   socket.on('room:leave', async (_payload, ack) => {
     try {

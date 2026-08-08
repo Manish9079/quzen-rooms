@@ -32,3 +32,10 @@ yarn-error.log*
 # Misc
 *.local
 coverage/
+
+
+# amplify
+node_modules
+.amplify
+amplify_outputs*
+amplifyconfiguration*

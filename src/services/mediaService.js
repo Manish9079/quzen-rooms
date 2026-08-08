@@ -40,6 +40,84 @@ class MediaService {
     this.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
     return this.screenStream;
   }
+  async addMicrophoneTrack(stream) {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error('Microphone access is not supported in this browser.');
+  }
+
+  const micStream = await navigator.mediaDevices.getUserMedia({
+    audio: true,
+    video: false,
+  });
+
+  const audioTrack = micStream.getAudioTracks()[0];
+
+  if (!audioTrack) {
+    throw new Error('No microphone track available.');
+  }
+
+  stream.addTrack(audioTrack);
+  this.localStream = stream;
+
+  for (const pc of this.peers.values()) {
+    const audioSender = pc
+      .getSenders()
+      .find((sender) => sender.track?.kind === 'audio');
+
+    if (audioSender) {
+      await audioSender.replaceTrack(audioTrack);
+    } else {
+      pc.addTrack(audioTrack, stream);
+    }
+  }
+
+  return audioTrack;
+}
+async startScreenShare(stream) {
+  const screenTrack = stream?.getVideoTracks()?.[0];
+
+  if (!screenTrack) {
+    throw new Error('No screen-share track available.');
+  }
+
+  this.screenStream = stream;
+
+  for (const pc of this.peers.values()) {
+    const videoSender = pc
+      .getSenders()
+      .find((sender) => sender.track?.kind === 'video');
+
+    if (videoSender) {
+      await videoSender.replaceTrack(screenTrack);
+    } else {
+      pc.addTrack(screenTrack, stream);
+    }
+  }
+
+  return screenTrack;
+}
+
+async stopScreenShare() {
+  const cameraTrack =
+    this.localStream?.getVideoTracks()?.[0] || null;
+
+  for (const pc of this.peers.values()) {
+    const videoSender = pc
+      .getSenders()
+      .find((sender) => sender.track?.kind === 'video');
+
+    if (videoSender) {
+      await videoSender.replaceTrack(
+        cameraTrack && cameraTrack.enabled
+          ? cameraTrack
+          : null
+      );
+    }
+  }
+
+  this.stopStream(this.screenStream);
+  this.screenStream = null;
+}
 
   setTrackEnabled(stream, kind, enabled) {
     stream?.getTracks().filter((t) => t.kind === kind).forEach((t) => { t.enabled = enabled; });
@@ -84,8 +162,23 @@ class MediaService {
     };
 
     pc.ontrack = (event) => {
-      this.onRemoteStream?.(remoteSocketId, event.streams[0], meta);
-    };
+  console.log(
+    'WEBRTC remote track:',
+    event.track.kind,
+    event.track.readyState,
+    event.streams[0]?.getTracks().map((t) => ({
+      kind: t.kind,
+      enabled: t.enabled,
+      readyState: t.readyState,
+    }))
+  );
+
+  this.onRemoteStream?.(
+    remoteSocketId,
+    event.streams[0],
+    meta
+  );
+};
 
     pc.onconnectionstatechange = () => {
       if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
@@ -101,26 +194,43 @@ class MediaService {
   startSignaling() {
     if (this.listening) return;
     this.listening = true;
+socketService.on('webrtc:peerJoined', async ({ socketId, userId, username }) => {
+  console.log('WEBRTC peerJoined:', socketId, userId);
 
-    socketService.on('webrtc:peerJoined', async ({ socketId, userId, username }) => {
-      const pc = this._createPeerConnection(socketId, { userId, username });
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      socketService.emit('webrtc:offer', { to: socketId, sdp: offer });
-    });
+  const pc = this._createPeerConnection(socketId, { userId, username });
 
-    socketService.on('webrtc:offer', async ({ from, userId, sdp }) => {
-      const pc = this.peers.get(from) || this._createPeerConnection(from, { userId });
-      await pc.setRemoteDescription(sdp);
-      const answer = await pc.createAnswer();
-      await pc.setLocalDescription(answer);
-      socketService.emit('webrtc:answer', { to: from, sdp: answer });
-    });
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  console.log('WEBRTC sending offer to:', socketId);
+
+  socketService.emit('webrtc:offer', { to: socketId, sdp: offer });
+});
+
+   socketService.on('webrtc:offer', async ({ from, userId, sdp }) => {
+  console.log('WEBRTC offer received from:', from);
+
+  const pc = this.peers.get(from) || this._createPeerConnection(from, { userId });
+
+  await pc.setRemoteDescription(sdp);
+
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  console.log('WEBRTC sending answer to:', from);
+
+  socketService.emit('webrtc:answer', { to: from, sdp: answer });
+});
 
     socketService.on('webrtc:answer', async ({ from, sdp }) => {
-      const pc = this.peers.get(from);
-      if (pc && pc.signalingState !== 'stable') await pc.setRemoteDescription(sdp);
-    });
+  console.log('WEBRTC answer received from:', from);
+
+  const pc = this.peers.get(from);
+
+  if (pc && pc.signalingState !== 'stable') {
+    await pc.setRemoteDescription(sdp);
+  }
+});
 
     socketService.on('webrtc:ice-candidate', async ({ from, candidate }) => {
       const pc = this.peers.get(from);

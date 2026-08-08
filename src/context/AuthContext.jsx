@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { authService } from '../services/authService';
-import { setUnauthorizedHandler } from '../services/apiClient';
+import { dataClient } from '../services/dataClient';
 
 const AuthContext = createContext(null);
 
@@ -9,55 +9,73 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // On refresh, ask the backend who we are — the httpOnly access-token
-    // cookie (if any) rides along automatically. This is what makes auth
-    // state survive a page reload without touching localStorage.
     authService.me()
       .then(({ user: current }) => setUser(current))
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
   }, []);
 
-  useEffect(() => {
-    // Any 401 anywhere in the app means the session is gone — clear it
-    // so protected routes redirect to /login instead of looking "stuck".
-    setUnauthorizedHandler(() => setUser(null));
-    return () => setUnauthorizedHandler(null);
-  }, []);
-
   const login = useCallback(async (identifier, password) => {
-    const { user: loggedIn } = await authService.login({ identifier, password });
-    setUser(loggedIn);
-    return loggedIn;
+    const result = await authService.login({ identifier, password });
+
+    if (result?.user) {
+      setUser(result.user);
+      const { data: profiles } = await dataClient.models.UserProfile.list({
+  filter: {
+    ownerId: {
+      eq: result.user.id,
+    },
+  },
+});
+
+if (!profiles.length) {
+  await dataClient.models.UserProfile.create({
+    ownerId: result.user.id,
+    username: result.user.username || result.user.email.split('@')[0],
+    displayName: result.user.displayName || result.user.email,
+    email: result.user.email,
+  });
+}
+      return result.user;
+    }
+
+    return result;
   }, []);
 
   const register = useCallback(async (payload) => {
-    const { user: created } = await authService.register(payload);
-    setUser(created);
-    return created;
+    return authService.register(payload);
   }, []);
 
   const logout = useCallback(async () => {
-    try { await authService.logout(); } catch { /* still clear local state */ }
-    setUser(null);
-  }, []);
-
-  const updateProfile = useCallback(async (patch) => {
-    const { user: updated } = await authService.updateProfile(patch);
-    setUser(updated);
-    return updated;
+    try {
+      await authService.logout();
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   const value = {
-    user, loading, isAuthenticated: Boolean(user),
-    login, register, logout, updateProfile,
+    user,
+    loading,
+    isAuthenticated: Boolean(user),
+    login,
+    register,
+    logout,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+
+  if (!ctx) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+
   return ctx;
 }

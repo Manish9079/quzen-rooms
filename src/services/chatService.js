@@ -1,18 +1,56 @@
-import { socketService } from './socketService';
-import { roomService } from './roomService';
+import { dataClient } from './dataClient';
 
-/**
- * Message-focused API: history comes over REST (roomService), live
- * messages/typing/deletes ride the shared socket (socketService).
- */
 export const chatService = {
-  getHistory: (code, params) => roomService.getMessages(code, params),
+  async getHistory(roomId) {
+    const { data, errors } = await dataClient.models.Message.list({
+      filter: {
+        roomId: {
+          eq: roomId,
+        },
+      },
+    });
 
-  send: (body) => socketService.emitAck('chat:send', { body }),
-  setTyping: (isTyping) => socketService.emit('chat:typing', { isTyping }),
-  deleteMessage: (messageId) => socketService.emitAck('chat:deleteMessage', { messageId }),
+    if (errors?.length) {
+      throw new Error(errors[0].message || 'Could not load messages');
+    }
 
-  onMessage: (handler) => socketService.on('chat:message', handler),
-  onTyping: (handler) => socketService.on('chat:typing', handler),
-  onMessageDeleted: (handler) => socketService.on('chat:messageDeleted', handler),
+    return {
+      messages: [...data].sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      ),
+    };
+  },
+
+  async send(roomId, user, body) {
+    const { data, errors } = await dataClient.models.Message.create({
+      roomId,
+      userId: user.id,
+      displayName: user.displayName,
+      body,
+    });
+
+    if (errors?.length) {
+      throw new Error(errors[0].message || 'Could not send message');
+    }
+
+    return {
+      ok: true,
+      message: data,
+    };
+  },
+
+  subscribeToMessages(roomId, handler) {
+    const subscription = dataClient.models.Message.onCreate().subscribe({
+      next: (message) => {
+        if (message.roomId === roomId) {
+          handler(message);
+        }
+      },
+      error: (err) => {
+        console.error('Message subscription error:', err);
+      },
+    });
+
+    return () => subscription.unsubscribe();
+  },
 };

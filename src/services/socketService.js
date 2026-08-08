@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
+const SOCKET_URL =
+  import.meta.env.VITE_SOCKET_URL || 'http://localhost:4000';
 
 /**
  * Thin singleton wrapper around one shared socket.io-client connection.
@@ -11,14 +12,24 @@ class SocketService {
   socket = null;
 
   connect() {
-    if (this.socket) return this.socket;
-    this.socket = io(SOCKET_URL, {
-      withCredentials: true,
-      autoConnect: true,
-      transports: ['websocket', 'polling'],
-    });
-    return this.socket;
-  }
+  if (this.socket) return this.socket;
+
+  this.socket = io(SOCKET_URL, {
+    withCredentials: true,
+    autoConnect: true,
+    transports: ['polling', 'websocket'],
+  });
+
+  this.socket.on('connect', () => {
+    console.log('Socket connected:', this.socket.id);
+  });
+
+  this.socket.on('connect_error', (err) => {
+    console.error('Socket connect error:', err.message);
+  });
+
+  return this.socket;
+}
 
   disconnect() {
     this.socket?.disconnect();

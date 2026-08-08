@@ -12,17 +12,27 @@ export default function VideoTile({ participant, stream, color, large = false })
     }
   }, [stream]);
 
-  const showVideo = participant.cameraOn && stream;
+  const showVideo =
+  (participant.cameraOn || participant.screenSharing) && stream;
 
   return (
     <div className={`qz-tile ${participant.speaking ? 'qz-tile--speaking' : ''} ${large ? 'qz-tile--large' : ''}`}>
-      {showVideo ? (
-        <video ref={videoRef} autoPlay playsInline muted={participant.isMe} className="qz-tile__video" />
-      ) : (
-        <div className="qz-tile__placeholder">
-          <Avatar name={participant.name} color={color} size={large ? 92 : 64} speaking={participant.speaking} />
-        </div>
-      )}
+     <video
+  ref={videoRef}
+  autoPlay
+  playsInline
+  muted={participant.isMe}
+  className={`qz-tile__video ${showVideo ? '' : 'qz-tile__video--hidden'}`}
+/>
+
+{!showVideo && (
+  <Avatar
+    name={participant.name}
+    color={color}
+    size={large ? 92 : 64}
+    speaking={participant.speaking}
+  />
+)}
 
       <div className="qz-tile__overlay">
         <div className="qz-tile__tags">

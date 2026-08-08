@@ -58,6 +58,14 @@ export default function Navbar() {
               <Button as={Link} to="/create" variant="primary" size="sm" icon={Plus}>Create Room</Button>
               <Link to="/profile" className="qz-nav__avatar" aria-label="Your profile">
                 <Avatar name={user.displayName} color="#16A374" size={40} />
+                <Button
+  variant="ghost"
+  size="sm"
+  icon={LogOut}
+  onClick={handleLogout}
+>
+  Log out
+</Button>
               </Link>
             </>
           ) : (

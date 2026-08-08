@@ -37,14 +37,16 @@ export default function CreateRoom() {
     setSubmitting(true);
 
     try {
-      const { room } = await roomService.createRoom({
-        name: roomName.trim(),
-        category,
-        isPrivate,
-        password: isPrivate ? password : undefined,
-        maxParticipants,
-        chatEnabled, videoEnabled, screenShareEnabled,
-      });
+const { room } = await roomService.createRoom(
+  {
+    name: roomName.trim(),
+    category,
+    isPrivate,
+    maxParticipants,
+    hostDisplayName: user.displayName,
+  },
+  user.id
+);
       addRecentRoom({ name: room.name, code: room.code, createdAgo: room.createdAt });
       navigate(`/room/${room.code}`);
     } catch (err) {

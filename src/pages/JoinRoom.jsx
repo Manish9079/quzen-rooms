@@ -9,11 +9,13 @@ import { roomService } from '../services/roomService';
 import { isValidRoomCode, normalizeRoomCode } from '../utils/roomCode';
 import './FormPage.css';
 import './JoinRoom.css';
+import { useAuth } from '../context/AuthContext';
 
 export default function JoinRoom() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { recentRooms, addRecentRoom } = useUser();
+  const { user } = useAuth();
 
   const [code, setCode] = useState(params.get('code') || '');
   const [password, setPassword] = useState('');
@@ -30,9 +32,26 @@ export default function JoinRoom() {
     setError('');
     setSubmitting(true);
     try {
-      const { room } = await roomService.joinRoom(normalized, needsPassword ? password : undefined);
-      addRecentRoom({ name: room.name, code: room.code, createdAgo: room.createdAt });
-      navigate(`/room/${room.code}`);
+    const result = await roomService.joinRoom(
+  normalized,
+  user,
+  needsPassword ? password : undefined
+);
+
+const { room, waiting } = result;
+
+if (waiting) {
+  setError('Waiting for host approval.');
+  return;
+}
+
+addRecentRoom({
+  name: room.name,
+  code: room.code,
+  createdAgo: room.createdAt,
+});
+
+navigate(`/room/${room.code}`);
     } catch (err) {
       if (err.status === 401 && err.message.toLowerCase().includes('password')) {
         setNeedsPassword(true);

@@ -24,7 +24,22 @@ export default function ExploreRooms() {
     setLoading(true);
     const timer = setTimeout(() => {
       roomService.getPublicRooms({ category: activeCategory, search: query || undefined })
-        .then(({ rooms: fetched }) => { if (alive) setRooms(fetched); })
+        .then(async ({ rooms: fetched }) => {
+  const roomsWithCounts = await Promise.all(
+    fetched.map(async (room) => {
+      const { members } = await roomService.getRoomMembers(room.id);
+
+      return {
+        ...room,
+        participantCount: members.length,
+      };
+    })
+  );
+
+  if (alive) {
+    setRooms(roomsWithCounts);
+  }
+})
         .catch((err) => { if (alive) setError(err.message || 'Could not load rooms.'); })
         .finally(() => { if (alive) setLoading(false); });
     }, 250); // debounce search-as-you-type
@@ -82,11 +97,17 @@ export default function ExploreRooms() {
                 <h3>{r.name}</h3>
                 {r.description && <p className="qz-room-card__desc">{r.description}</p>}
                 <div className="qz-room-card__host">
-                  <Avatar name={r.host.displayName} color={AVATAR_HUES[idx % AVATAR_HUES.length]} size={26} />
-                  <span>Hosted by {r.host.displayName}</span>
-                </div>
+  <Avatar
+    name={r.hostDisplayName || 'Host'}
+    color={AVATAR_HUES[idx % AVATAR_HUES.length]}
+    size={26}
+  />
+  <span>Hosted by {r.hostDisplayName || 'Host'}</span>
+</div>
                 <div className="qz-room-card__foot">
-                  <span><Users size={14} strokeWidth={2.2} /> {r.participantCount}/{r.maxParticipants}</span>
+                  <span>
+  <Users size={14} strokeWidth={2.2} />{r.participantCount}/{r.maxParticipants}
+</span>
                   <span className="qz-room-card__code">{r.code}</span>
                 </div>
               </button>

@@ -8,16 +8,30 @@ const STATUS_META = {
   reconnecting: { icon: WifiOff, label: 'Reconnecting…', tone: 'qz-conn--reconnecting' },
 };
 
-export default function RoomHeader({ room, connectionStatus, onCopyInvite, canModerate = false, isLocked = false, onToggleLock }) {
-  const [copied, setCopied] = useState(false);
+export default function RoomHeader({
+  room,
+  connectionStatus,
+  onCopyCode,
+  onCopyInvite,
+  canModerate = false,
+  isLocked = false,
+  onToggleLock,
+})  {
+  const [copiedCode, setCopiedCode] = useState(false);
+const [copiedInvite, setCopiedInvite] = useState(false);
   const meta = STATUS_META[connectionStatus] || STATUS_META.connecting;
   const StatusIcon = meta.icon;
+function handleCopyCode() {
+  onCopyCode();
+  setCopiedCode(true);
+  setTimeout(() => setCopiedCode(false), 1800);
+}
 
-  function handleCopy() {
-    onCopyInvite();
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
-  }
+function handleCopyInvite() {
+  onCopyInvite();
+  setCopiedInvite(true);
+  setTimeout(() => setCopiedInvite(false), 1800);
+}
 
   return (
     <header className="qz-room-header">
@@ -44,11 +58,27 @@ export default function RoomHeader({ room, connectionStatus, onCopyInvite, canMo
             {isLocked ? 'Unlock room' : 'Lock room'}
           </button>
         )}
-        <button className="qz-room-header__invite" onClick={handleCopy}>
-          {copied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} strokeWidth={2.3} />}
-          <span className="qz-room-header__code">{room.code}</span>
-          {copied ? 'Copied' : 'Copy Invite Link'}
-        </button>
+       <button className="qz-room-header__invite" onClick={handleCopyCode}>
+  {copiedCode ? (
+    <Check size={15} strokeWidth={2.5} />
+  ) : (
+    <Copy size={15} strokeWidth={2.3} />
+  )}
+
+  <span className="qz-room-header__code">{room.code}</span>
+
+  {copiedCode ? 'Code Copied' : 'Copy Code'}
+</button>
+
+<button className="qz-room-header__invite" onClick={handleCopyInvite}>
+  {copiedInvite ? (
+    <Check size={15} strokeWidth={2.5} />
+  ) : (
+    <Copy size={15} strokeWidth={2.3} />
+  )}
+
+  {copiedInvite ? 'Invite Copied' : 'Copy Invite Link'}
+</button>
       </div>
     </header>
   );

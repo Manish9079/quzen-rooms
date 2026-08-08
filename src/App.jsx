@@ -11,6 +11,7 @@ import MainRoom from './pages/MainRoom';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
+import VerifyEmail from './pages/VerifyEmail';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/" element={<Layout><Landing /></Layout>} />
       <Route path="/login" element={<Layout footer={false}><Login /></Layout>} />
       <Route path="/register" element={<Layout footer={false}><Register /></Layout>} />
+      <Route path="/verify-email" element={<Layout footer={false}><VerifyEmail /></Layout>} />
       <Route path="/explore" element={<Layout><ExploreRooms /></Layout>} />
       <Route path="/create" element={<Layout><ProtectedRoute><CreateRoom /></ProtectedRoute></Layout>} />
       <Route path="/join" element={<Layout><ProtectedRoute><JoinRoom /></ProtectedRoute></Layout>} />

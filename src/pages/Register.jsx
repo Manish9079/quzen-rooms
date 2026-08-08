@@ -24,7 +24,17 @@ export default function Register() {
     if (!form.username.trim() || !form.displayName.trim() || !form.email.trim() || !form.password) {
       return setError('Fill in every field to create your account.');
     }
-    if (form.password.length < 8) return setError('Password must be at least 8 characters.');
+    const strongPassword =
+  /[A-Z]/.test(form.password) &&
+  /[a-z]/.test(form.password) &&
+  /[0-9]/.test(form.password) &&
+  /[^A-Za-z0-9]/.test(form.password);
+
+if (form.password.length < 8 || !strongPassword) {
+  return setError(
+    'Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.'
+  );
+}
     setError('');
     setSubmitting(true);
     try {
@@ -34,7 +44,12 @@ export default function Register() {
         email: form.email.trim().toLowerCase(),
         password: form.password,
       });
-      navigate('/explore', { replace: true });
+      navigate('/verify-email', {
+      replace: true,
+      state: {
+      email: form.email.trim().toLowerCase(),
+        },
+     });
     } catch (err) {
       setError(err.message || 'Could not create your account. Please try again.');
     } finally {

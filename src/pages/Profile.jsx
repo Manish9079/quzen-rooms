@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Clock, ArrowRight, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Field, TextInput, TextArea } from '../components/common/Field';
@@ -7,9 +7,11 @@ import Avatar from '../components/common/Avatar';
 import { useAuth } from '../context/AuthContext';
 import { useUser } from '../context/UserContext';
 import { authService } from '../services/authService';
+import { roomService } from '../services/roomService';
 import { useToast } from '../components/common/Toast';
 import { timeAgo } from '../utils/format';
 import './Profile.css';
+
 
 export default function Profile() {
   const { user, updateProfile } = useAuth();
@@ -25,7 +27,27 @@ export default function Profile() {
   const [newPassword, setNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [myRooms, setMyRooms] = useState([]);
+const [loadingRooms, setLoadingRooms] = useState(true);
 
+useEffect(() => {
+  let alive = true;
+
+  roomService.getMyRooms(user.id)
+    .then(({ rooms }) => {
+      if (alive) setMyRooms(rooms);
+    })
+    .catch((err) => {
+      console.error('Could not load my rooms:', err);
+    })
+    .finally(() => {
+      if (alive) setLoadingRooms(false);
+    });
+
+  return () => {
+    alive = false;
+  };
+}, [user.id]);
   async function handleSaveProfile(e) {
     e.preventDefault();
     setSaving(true);
@@ -92,7 +114,70 @@ export default function Profile() {
             </Button>
           </form>
         </div>
+<div className="qz-profile__card qz-neu">
+  <h2>My Rooms</h2>
 
+  {loadingRooms ? (
+    <p className="qz-profile__empty">Loading your rooms...</p>
+  ) : myRooms.length === 0 ? (
+    <p className="qz-profile__empty">
+      You haven't created any rooms yet.
+    </p>
+  ) : (
+    <ul className="qz-profile__rooms">
+      {myRooms.map((room) => (
+        <li key={room.id}>
+          <div>
+            <span className="qz-profile__room-name">
+              {room.name}
+              {room.isPrivate ? ' 🔒' : ' 🌐'}
+            </span>
+
+            <span className="qz-profile__room-meta">
+              {room.code} · {room.isPrivate ? 'Private' : 'Public'}
+            </span>
+          </div>
+
+          <Button
+            size="sm"
+            variant="secondary"
+            icon={ArrowRight}
+            iconPosition="right"
+            onClick={() => navigate(`/room/${room.code}`)}
+          >
+            Rejoin
+          </Button>
+          <Button
+  size="sm"
+  variant="secondary"
+  onClick={async () => {
+    const ok = window.confirm(`Delete "${room.name}"?`);
+
+    if (!ok) return;
+
+    try {
+      await roomService.deleteRoom(room.id);
+
+      setMyRooms((prev) =>
+        prev.filter((r) => r.id !== room.id)
+      );
+
+      showToast('Room deleted successfully.');
+    } catch (err) {
+      showToast(
+        err.message || 'Could not delete room.',
+        'error'
+      );
+    }
+  }}
+>
+  Delete
+</Button>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
         <div className="qz-profile__card qz-neu">
           <h2><Clock size={17} strokeWidth={2.2} /> Recent rooms</h2>
           {recentRooms.length === 0 ? (
@@ -108,6 +193,7 @@ export default function Profile() {
                   <Button size="sm" variant="secondary" icon={ArrowRight} iconPosition="right" onClick={() => navigate(`/room/${r.code}`)}>
                     Rejoin
                   </Button>
+                  
                 </li>
               ))}
             </ul>
