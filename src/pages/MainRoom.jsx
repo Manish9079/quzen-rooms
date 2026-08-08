@@ -50,7 +50,7 @@ export default function MainRoom() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [unreadChat, setUnreadChat] = useState(0);
   const [messages, setMessages] = useState([]);
-  const [typingUsers, setTypingUsers] = useState({});
+  
 
   const chatOpenRef = useRef(chatOpen);
   chatOpenRef.current = chatOpen;
@@ -394,17 +394,20 @@ return () => {
           localStream.addTrack(newVideoTrack);
 
           // Send new camera track to existing peers
-          for (const pc of mediaService.peers.values()) {
-            const sender = pc
-              .getSenders()
-              .find((s) => s.track?.kind === 'video');
+          // Screen share chal rahi ho to remote sender ko camera se replace mat karo
+if (!sharingScreen) {
+  for (const pc of mediaService.peers.values()) {
+    const sender = pc
+      .getSenders()
+      .find((s) => s.track?.kind === 'video');
 
-            if (sender) {
-              await sender.replaceTrack(newVideoTrack);
-            } else {
-              pc.addTrack(newVideoTrack, localStream);
-            }
-          }
+    if (sender) {
+      await sender.replaceTrack(newVideoTrack);
+    } else {
+      pc.addTrack(newVideoTrack, localStream);
+    }
+  }
+}
 
           setLocalStream(
             new MediaStream(localStream.getTracks())
@@ -752,12 +755,7 @@ const handleRejectWaiting = useCallback(async (userId) => {
   self: m.userId === user.id,
 })), [messages, user.id]);
 
-  const typingLabel = useMemo(() => {
-    const names = Object.values(typingUsers);
-    if (names.length === 0) return '';
-    if (names.length === 1) return `${names[0]} is typing…`;
-    return `${names.slice(0, 2).join(', ')} are typing…`;
-  }, [typingUsers]);
+ 
 
   if (joinError) {
     return (

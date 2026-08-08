@@ -17,7 +17,8 @@ const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 class MediaService {
   localStream = null;
   screenStream = null;
-  peers = new Map(); // remote socketId -> RTCPeerConnection
+  peers = new Map(); 
+  remoteStreams = new Map();// remote socketId -> RTCPeerConnection
   listening = false;
 
   // Assign these from the UI layer (MainRoom) to react to remote media.
@@ -161,24 +162,45 @@ async stopScreenShare() {
       } catch { /* benign if signaling state changed mid-negotiation */ }
     };
 
-    pc.ontrack = (event) => {
+   pc.ontrack = (event) => {
+  let combinedStream = this.remoteStreams.get(remoteSocketId);
+
+  if (!combinedStream) {
+    combinedStream = new MediaStream();
+    this.remoteStreams.set(remoteSocketId, combinedStream);
+  }
+
+  const alreadyExists = combinedStream
+    .getTracks()
+    .some((track) => track.id === event.track.id);
+
+  if (!alreadyExists) {
+    // Same kind ka old track remove karo
+    combinedStream
+      .getTracks()
+      .filter((track) => track.kind === event.track.kind)
+      .forEach((track) => combinedStream.removeTrack(track));
+
+    combinedStream.addTrack(event.track);
+  }
+
   console.log(
-    'WEBRTC remote track:',
-    event.track.kind,
-    event.track.readyState,
-    event.streams[0]?.getTracks().map((t) => ({
-      kind: t.kind,
-      enabled: t.enabled,
-      readyState: t.readyState,
+    'WEBRTC combined remote tracks:',
+    combinedStream.getTracks().map((track) => ({
+      kind: track.kind,
+      enabled: track.enabled,
+      readyState: track.readyState,
     }))
   );
 
   this.onRemoteStream?.(
     remoteSocketId,
-    event.streams[0],
+    combinedStream,
     meta
   );
 };
+
+
 
     pc.onconnectionstatechange = () => {
       if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
@@ -238,10 +260,18 @@ socketService.on('webrtc:peerJoined', async ({ socketId, userId, username }) => 
     });
 
     socketService.on('webrtc:peerDisconnected', ({ socketId }) => {
-      this.peers.get(socketId)?.close();
-      this.peers.delete(socketId);
-      this.onPeerLeft?.(socketId);
-    });
+  this.peers.get(socketId)?.close();
+  this.peers.delete(socketId);
+
+  this.remoteStreams
+    .get(socketId)
+    ?.getTracks()
+    .forEach((track) => track.stop());
+
+  this.remoteStreams.delete(socketId);
+
+  this.onPeerLeft?.(socketId);
+});
 
     // Tells everyone already in the room "I'm ready to negotiate" —
     // triggers webrtc:peerJoined on their side, which starts the offer.
@@ -292,6 +322,10 @@ socketService.on('webrtc:peerJoined', async ({ socketId, userId, username }) => 
   stopAll() {
     this.peers.forEach((pc) => pc.close());
     this.peers.clear();
+    this.remoteStreams.forEach((stream) => {
+  stream.getTracks().forEach((track) => track.stop());
+});
+this.remoteStreams.clear();
     this.stopStream(this.localStream);
     this.stopStream(this.screenStream);
     this.localStream = null;

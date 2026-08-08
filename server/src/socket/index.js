@@ -3,7 +3,7 @@ import { env } from '../config/env.js';
 import { socketAuthMiddleware } from './socketAuth.js';
 import { registerChatHandlers } from './chat.handler.js';
 import { registerWebrtcHandlers } from './webrtc.handler.js';
-import { registerHostHandlers } from './host.handler.js';
+
 
 
 export function initSocket(httpServer) {
@@ -16,7 +16,7 @@ export function initSocket(httpServer) {
   io.on('connection', (socket) => {
     registerChatHandlers(io, socket);
     registerWebrtcHandlers(io, socket);
-    registerHostHandlers(io, socket);
+    
   });
 
   return io;
