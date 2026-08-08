@@ -42,6 +42,7 @@ const { room } = await roomService.createRoom(
     name: roomName.trim(),
     category,
     isPrivate,
+    password: isPrivate ? password.trim() : '',
     maxParticipants,
     hostDisplayName: user.displayName,
   },

@@ -150,6 +150,18 @@ useEffect(() => {
           <Button
   size="sm"
   variant="secondary"
+  onClick={() => {
+    navigator.clipboard
+      ?.writeText(room.code)
+      .then(() => showToast('Room code copied'))
+      .catch(() => {});
+  }}
+>
+  Copy Code
+</Button>
+          <Button
+  size="sm"
+  variant="secondary"
   onClick={async () => {
     const ok = window.confirm(`Delete "${room.name}"?`);
 

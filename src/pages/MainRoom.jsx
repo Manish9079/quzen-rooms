@@ -38,6 +38,7 @@ export default function MainRoom() {
   const [micOn, setMicOn] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
   const [sharingScreen, setSharingScreen] = useState(false);
+  const [selectedScreenShareUserId, setSelectedScreenShareUserId] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [screenStream, setScreenStream] = useState(null);
 
@@ -54,6 +55,9 @@ export default function MainRoom() {
   const [unreadChat, setUnreadChat] = useState(0);
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState({});
+  const [editRoomName, setEditRoomName] = useState('');
+  const [editRoomDescription, setEditRoomDescription] = useState('');
+  const [editMaxParticipants, setEditMaxParticipants] = useState(8);
   
 
   const chatOpenRef = useRef(chatOpen);
@@ -96,7 +100,9 @@ useEffect(() => {
       }
 
       setRoom(foundRoom);
-
+setEditRoomName(foundRoom.name || '');
+setEditRoomDescription(foundRoom.description || '');
+setEditMaxParticipants(foundRoom.maxParticipants || 8);
       const { members } = await roomService.getRoomMembers(foundRoom.id);
 
 if (cancelled) return;
@@ -724,7 +730,32 @@ function handleCopyInvite() {
     showToast('Room deleted successfully.');
     navigate('/explore', { replace: true });
   } catch (err) {
-    showToast(err.message || 'Could not delete room.', 'error');
+    showToast(
+      err.message || 'Could not delete room.',
+      'error'
+    );
+  }
+}
+
+async function handleSaveRoomSettings() {
+  if (!room?.id) return;
+
+  try {
+    const { room: updatedRoom } =
+      await roomService.updateRoom(room.id, {
+        name: editRoomName.trim(),
+        description: editRoomDescription.trim(),
+        maxParticipants: Number(editMaxParticipants) || 8,
+      });
+
+    setRoom(updatedRoom);
+
+    showToast('Room settings updated.');
+  } catch (err) {
+    showToast(
+      err.message || 'Could not update room settings.',
+      'error'
+    );
   }
 }
   async function handleToggleLock() {
@@ -862,6 +893,47 @@ const handleRejectWaiting = useCallback(async (userId) => {
     };
   }), [participants, user.id, micOn, cameraOn, sharingScreen, mediaStateByUserId, socketIdByUserId, localStream, remoteStreams, speakingByUserId]);
 
+  const screenSharers = useMemo(
+  () => displayParticipants.filter((p) => p.screenSharing),
+  [displayParticipants]
+);
+
+
+const activeScreenSharer = useMemo(() => {
+  if (screenSharers.length === 0) return null;
+
+  const selected = screenSharers.find(
+    (p) => p.id === selectedScreenShareUserId
+  );
+
+  return selected || screenSharers[0];
+}, [screenSharers, selectedScreenShareUserId]);
+useEffect(() => {
+  if (screenSharers.length === 0) {
+    setSelectedScreenShareUserId(null);
+    return;
+  }
+
+  const stillExists = screenSharers.some(
+    (p) => p.id === selectedScreenShareUserId
+  );
+
+  if (!stillExists) {
+    setSelectedScreenShareUserId(screenSharers[0].id);
+  }
+}, [screenSharers, selectedScreenShareUserId]);
+
+function getScreenShareStream(participant) {
+  if (!participant) return null;
+
+  // Apni screen share ke liye original display stream
+  if (participant.isMe) {
+    return screenStream;
+  }
+
+  // Remote user's current WebRTC video stream
+  return participant._stream;
+}
  const chatMessages = useMemo(() => messages.map((m) => ({
   id: m.id,
   text: m.body,
@@ -927,17 +999,61 @@ const typingLabel = useMemo(() => {
       )}
 
       <div className="qz-room__body">
-        {sharingScreen && (
-          <div className="qz-room__spotlight">
-            <ScreenPreview stream={screenStream} />
-            <span className="qz-room__spotlight-label">You're presenting your screen</span>
-          </div>
-        )}
-        <div className={`qz-video-grid ${sharingScreen ? 'qz-video-grid--sidebar' : ''}`} data-count={displayParticipants.length}>
-          {displayParticipants.map((p) => (
-            <VideoTile key={p.id} participant={p} stream={p._stream} color={colorFromId(p.id)} />
+    {activeScreenSharer && (
+  <div className="qz-screen-share-layout">
+
+    <div className="qz-screen-share-layout__main">
+      <ScreenPreview
+        stream={getScreenShareStream(activeScreenSharer)}
+      />
+
+      <span className="qz-room__spotlight-label">
+        {activeScreenSharer.isMe
+          ? "You're presenting"
+          : `${activeScreenSharer.name} is presenting`}
+      </span>
+    </div>
+
+    {screenSharers.length > 1 && (
+      <div className="qz-screen-share-layout__thumbs">
+        {screenSharers
+          .filter((p) => p.id !== activeScreenSharer.id)
+          .map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              className="qz-screen-share-thumb"
+              onClick={() => setSelectedScreenShareUserId(p.id)}
+            >
+              <VideoTile
+                participant={p}
+                stream={getScreenShareStream(p)}
+                color={p.color}
+              />
+            </button>
           ))}
-        </div>
+      </div>
+    )}
+
+  </div>
+)}
+
+<div
+  className={`qz-video-grid ${sharingScreen ? 'qz-video-grid--sidebar' : ''}`}
+  data-count={displayParticipants.length}
+>
+  {displayParticipants
+  .filter((p) => !(sharingScreen && p.isMe))
+  .map((p) => (
+    <VideoTile
+      key={p.id}
+      participant={p}
+     stream={p._stream}
+      color={p.color}
+    />
+  ))}
+</div>
+
       </div>
 
       <ControlBar
@@ -976,18 +1092,104 @@ const typingLabel = useMemo(() => {
     <Settings2 size={13} strokeWidth={2.3} />
     Personal audio/video preferences live in your account Settings page.
   </p>
+{room.ownerId === user.id && (
+  <div className="qz-room-settings">
+    <div className="qz-room-settings__head">
+      <div>
+        <span className="qz-room-settings__eyebrow">ROOM CONTROL</span>
+        <h4>Customize this room</h4>
+        <p>Update the room details and participant limit.</p>
+      </div>
 
-  {room.description && (
-    <p className="qz-room__more-desc">
-      {room.description}
-    </p>
-  )}
+      <div className="qz-room-settings__status">
+        <span className="qz-room-settings__status-dot" />
+        Live
+      </div>
+    </div>
 
-  {room.ownerId === user.id && (
+    <div className="qz-room-settings__field">
+      <label htmlFor="room-name">Room name</label>
+      <input
+        id="room-name"
+        type="text"
+        value={editRoomName}
+        onChange={(e) => setEditRoomName(e.target.value)}
+        maxLength={80}
+        placeholder="Enter room name"
+      />
+    </div>
+
+    <div className="qz-room-settings__field">
+      <div className="qz-room-settings__label-row">
+        <label htmlFor="room-description">Description</label>
+        <span>{editRoomDescription.length}/300</span>
+      </div>
+
+      <textarea
+        id="room-description"
+        value={editRoomDescription}
+        onChange={(e) => setEditRoomDescription(e.target.value)}
+        maxLength={300}
+        rows={3}
+        placeholder="What is this room about?"
+      />
+    </div>
+
+    <div className="qz-room-settings__limit-card">
+      <div>
+        <span className="qz-room-settings__limit-title">
+          Participant limit
+        </span>
+        <span className="qz-room-settings__limit-help">
+          Maximum people allowed in this room
+        </span>
+      </div>
+
+      <div className="qz-room-settings__stepper">
+        <button
+          type="button"
+          onClick={() =>
+            setEditMaxParticipants((prev) =>
+              Math.max(2, Number(prev) - 1)
+            )
+          }
+        >
+          −
+        </button>
+
+        <span>{editMaxParticipants}</span>
+
+        <button
+          type="button"
+          onClick={() =>
+            setEditMaxParticipants((prev) =>
+              Math.min(20, Number(prev) + 1)
+            )
+          }
+        >
+          +
+        </button>
+      </div>
+    </div>
+
+    <Button onClick={handleSaveRoomSettings}>
+      Save changes
+    </Button>
+  </div>
+)}
+
+{room.ownerId === user.id && (
+  <div className="qz-room-settings__danger">
+    <div>
+      <strong>Danger zone</strong>
+      <span>This permanently deletes the room.</span>
+    </div>
+
     <Button onClick={handleDeleteRoom}>
       Delete Room
     </Button>
-  )}
+  </div>
+)}
 </Modal>
 
 </div>

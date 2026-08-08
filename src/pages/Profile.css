@@ -27,3 +27,50 @@
 .qz-profile__room-meta { display: block; font-size: 11.5px; color: var(--qz-gray-400); font-family: var(--qz-font-mono); margin-top: 3px; }
 
 @media (max-width: 860px) { .qz-profile__inner { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .qz-profile {
+    padding: 28px 14px 80px;
+  }
+
+  .qz-profile__card {
+    padding: 20px;
+  }
+
+  .qz-profile__head {
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .qz-profile__head h1 {
+    font-size: 20px;
+  }
+
+  .qz-profile__rooms li {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .qz-profile__rooms li > div:first-child {
+    min-width: 0;
+  }
+
+  .qz-profile__room-name {
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .qz-profile__room-meta {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .qz-profile__rooms li .qz-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

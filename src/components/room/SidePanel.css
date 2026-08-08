@@ -101,5 +101,58 @@
 .qz-waiting-room__reject { background: rgba(225,91,91,0.2); color: #F0A5A5; }
 
 @media (max-width: 640px) {
-  .qz-side-panel { width: 100%; }
+  .qz-side-panel {
+    width: 100%;
+    top: 0;
+    bottom: 0;
+    border-left: none;
+  }
+
+  .qz-side-panel__head {
+    padding: 16px 16px 12px;
+  }
+
+  .qz-chat__list {
+    padding: 14px 14px 18px;
+    gap: 12px;
+  }
+
+  .qz-chat__bubble-wrap {
+    max-width: 84%;
+  }
+
+  .qz-chat__composer {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(13, 31, 25, 0.96);
+  }
+
+  .qz-chat__composer input {
+    min-width: 0;
+    padding: 11px 14px;
+  }
+
+  .qz-participants__invite {
+    margin: 12px 14px;
+  }
+
+  .qz-participants__list {
+    padding: 4px 8px 18px;
+  }
+
+  .qz-participant-row {
+    gap: 9px;
+    padding: 10px 6px;
+  }
+
+  .qz-participant-row__status {
+    gap: 5px;
+  }
+
+  .qz-participant-row__actions {
+    gap: 3px;
+  }
+
+  .qz-waiting-room {
+    margin: 4px 14px 12px;
+  }
 }

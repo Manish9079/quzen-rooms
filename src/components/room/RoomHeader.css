@@ -51,6 +51,42 @@
 .qz-room-header__code { font-family: var(--qz-font-mono); color: var(--qz-mint-300); }
 
 @media (max-width: 640px) {
-  .qz-room-header__left h1 { font-size: 15px; }
-  .qz-room-header__code { display: none; }
+  .qz-room-header {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .qz-room-header__left {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .qz-room-header__left h1 {
+    font-size: 15px;
+    max-width: 65vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .qz-room-header__right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .qz-room-header__code {
+    display: none;
+  }
+
+  .qz-room-header__invite,
+  .qz-room-header__lock {
+    padding: 8px 11px;
+    font-size: 11.5px;
+  }
+
+  .qz-conn {
+    font-size: 10.5px;
+  }
 }

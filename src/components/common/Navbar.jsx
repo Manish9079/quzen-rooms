@@ -38,6 +38,14 @@ export default function Navbar() {
           <div className="qz-nav__mobile-actions">
             {isAuthenticated ? (
               <>
+              <Button
+  as={Link}
+  to="/profile"
+  variant="secondary"
+  onClick={() => setOpen(false)}
+>
+  Profile
+</Button>
                 <Button as={Link} to="/join" variant="secondary" icon={LogIn} onClick={() => setOpen(false)}>Join Room</Button>
                 <Button as={Link} to="/create" variant="primary" icon={Plus} onClick={() => setOpen(false)}>Create Room</Button>
                 <Button variant="ghost" icon={LogOut} onClick={handleLogout}>Log out</Button>
