@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams} from 'react-router-dom';
 import { KeyRound, ArrowRight, Clock, Lock } from 'lucide-react';
 import { Field, TextInput } from '../components/common/Field';
 import Button from '../components/common/Button';
@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function JoinRoom() {
   const navigate = useNavigate();
+  
   const [params] = useSearchParams();
   const { recentRooms, addRecentRoom } = useUser();
   const { user } = useAuth();
@@ -41,7 +42,10 @@ export default function JoinRoom() {
 const { room, waiting } = result;
 
 if (waiting) {
-  setError('Waiting for host approval.');
+  navigate(`/room/${room.code}`, {
+    replace: true,
+    state: { waiting: true },
+  });
   return;
 }
 

@@ -5,8 +5,18 @@ import './SidePanel.css';
 
 let typingTimeout;
 
-export default function ChatPanel({ open, onClose, messages, onSend, myName, onTypingChange, typingLabel }) {
+export default function ChatPanel({
+  open,
+  onClose,
+  messages,
+  onSend,
+  onDelete,
+  myName,
+  onTypingChange,
+  typingLabel
+}) {
   const [draft, setDraft] = useState('');
+  const [selectedMessageId, setSelectedMessageId] = useState(null);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -40,11 +50,34 @@ export default function ChatPanel({ open, onClose, messages, onSend, myName, onT
       <div className="qz-chat__list" ref={listRef}>
         {messages.length === 0 && <p className="qz-chat__empty">No messages yet — say hi 👋</p>}
         {messages.map((m) => (
-          <div key={m.id} className={`qz-chat__msg ${m.self ? 'qz-chat__msg--self' : ''}`}>
+          <div
+  key={m.id}
+  className={`qz-chat__msg ${m.self ? 'qz-chat__msg--self' : ''}`}
+  onClick={() => {
+    if (m.self) {
+      setSelectedMessageId((prev) =>
+        prev === m.id ? null : m.id
+      );
+    }
+  }}
+>
             {!m.self && <Avatar name={m.author} color={m.color} size={30} />}
             <div className="qz-chat__bubble-wrap">
               {!m.self && <span className="qz-chat__author">{m.author}</span>}
               <p className="qz-chat__bubble">{m.text}</p>
+{m.self && selectedMessageId === m.id && onDelete && (
+  <button
+    type="button"
+    className="qz-chat__delete"
+    onClick={(e) => {
+      e.stopPropagation();
+      onDelete(m.id);
+      setSelectedMessageId(null);
+    }}
+  >
+    Delete
+  </button>
+)}
             </div>
           </div>
         ))}

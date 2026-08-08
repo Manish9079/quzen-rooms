@@ -49,7 +49,7 @@ const schema = a
     role: a.string().default('MEMBER'),
   })
   .authorization((allow) => [
-    allow.authenticated().to(['create', 'read', 'delete']),
+    allow.authenticated().to(['create', 'read', 'update', 'delete']),
   ]),
   WaitingRequest: a
   .model({

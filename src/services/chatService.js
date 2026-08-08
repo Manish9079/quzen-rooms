@@ -53,4 +53,32 @@ export const chatService = {
 
     return () => subscription.unsubscribe();
   },
+  async deleteMessage(messageId) {
+  const { data, errors } = await dataClient.models.Message.delete({
+    id: messageId,
+  });
+
+  if (errors?.length) {
+    throw new Error(
+      errors[0].message || 'Could not delete message'
+    );
+  }
+
+  return { ok: true, message: data };
+},
+
+subscribeToDeletedMessages(roomId, handler) {
+  const subscription = dataClient.models.Message.onDelete().subscribe({
+    next: (message) => {
+      if (message.roomId === roomId) {
+        handler(message);
+      }
+    },
+    error: (err) => {
+      console.error('Message delete subscription error:', err);
+    },
+  });
+
+  return () => subscription.unsubscribe();
+},
 };

@@ -170,9 +170,26 @@ async requestToJoin(room, user) {
     );
   }
 
-  if (existing.length > 0) {
-    return { request: existing[0] };
+  const pendingRequest = existing.find(
+  (request) => request.status === 'PENDING'
+);
+
+if (pendingRequest) {
+  const { data, errors } =
+    await dataClient.models.WaitingRequest.update({
+      id: pendingRequest.id,
+      displayName: user.displayName,
+      status: 'PENDING',
+    });
+
+  if (errors?.length) {
+    throw new Error(
+      errors[0].message || 'Could not refresh waiting request'
+    );
   }
+
+  return { request: data };
+}
 
   const { data, errors } =
     await dataClient.models.WaitingRequest.create({
@@ -259,7 +276,7 @@ async rejectWaitingRequest(requestId) {
     );
   }
 },
-  subscribeToRoomMembers(roomId, onJoin, onLeave) {
+ subscribeToRoomMembers(roomId, onJoin, onLeave, onUpdate) {
   const createSub = dataClient.models.RoomMember.onCreate().subscribe({
     next: (member) => {
       if (member.roomId === roomId) {
@@ -267,7 +284,18 @@ async rejectWaitingRequest(requestId) {
       }
     },
     error: (err) => {
-      console.error('Room member subscription error:', err);
+      console.error('Room member create subscription error:', err);
+    },
+  });
+
+  const updateSub = dataClient.models.RoomMember.onUpdate().subscribe({
+    next: (member) => {
+      if (member.roomId === roomId) {
+        onUpdate?.(member);
+      }
+    },
+    error: (err) => {
+      console.error('Room member update subscription error:', err);
     },
   });
 
@@ -284,6 +312,7 @@ async rejectWaitingRequest(requestId) {
 
   return () => {
     createSub.unsubscribe();
+    updateSub.unsubscribe();
     deleteSub.unsubscribe();
   };
 },

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation  } from 'react-router-dom';
 import { Settings2, MonitorX } from 'lucide-react';
 import RoomHeader from '../components/room/RoomHeader';
 import VideoTile from '../components/room/VideoTile';
@@ -22,6 +22,7 @@ import './MainRoom.css';
 export default function MainRoom() {
   const { code } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const showToast = useToast();
   const { user } = useAuth();
   const { addRecentRoom } = useUser();
@@ -42,7 +43,9 @@ export default function MainRoom() {
 
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [joinError, setJoinError] = useState('');
-  const [waitingForApproval, setWaitingForApproval] = useState(false);
+  const [waitingForApproval, setWaitingForApproval] = useState(
+  location.state?.waiting === true
+);
   const [mediaError, setMediaError] = useState('');
 
   const [chatOpen, setChatOpen] = useState(false);
@@ -50,6 +53,7 @@ export default function MainRoom() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [unreadChat, setUnreadChat] = useState(0);
   const [messages, setMessages] = useState([]);
+  const [typingUsers, setTypingUsers] = useState({});
   
 
   const chatOpenRef = useRef(chatOpen);
@@ -57,7 +61,26 @@ export default function MainRoom() {
   const mySocketIdRef = useRef(null);
   const socketIdByUserIdRef = useRef({});
   useEffect(() => { socketIdByUserIdRef.current = socketIdByUserId; }, [socketIdByUserId]);
+useEffect(() => {
+  if (!waitingForApproval) return undefined;
 
+  const timer = setTimeout(() => {
+    setWaitingForApproval(false);
+
+    showToast(
+      'Host did not respond. Please try again.',
+      'info'
+    );
+
+    navigate(`/join?code=${code}`, {
+      replace: true,
+    });
+  }, 10000);
+
+  return () => {
+    clearTimeout(timer);
+  };
+}, [waitingForApproval, navigate, code, showToast]);
   useEffect(() => {
   let cancelled = false;
 
@@ -158,11 +181,21 @@ useEffect(() => {
   );
 
   if (member.userId === user.id) {
-    showToast('You were removed from the room.', 'error');
-    navigate('/explore', { replace: true });
-  }
+  showToast('You were removed from the room.', 'error');
+  navigate('/explore', { replace: true });
 }
+},
+
+(member) => {
+  setParticipants((prev) =>
+    prev.map((p) =>
+      p.user.id === member.userId
+        ? { ...p, role: member.role || 'MEMBER' }
+        : p
+    )
   );
+}
+);
 const unsubscribeWaiting =
   roomService.subscribeToWaitingRequests(
     room.id,
@@ -190,25 +223,59 @@ const unsubscribeWaiting =
     },
 
     (request) => {
-      setWaitingList((prev) => {
-        if (request.status !== 'PENDING') {
-          return prev.filter(
-            (item) => item.id !== request.id
-          );
-        }
+  if (request.userId === user.id) {
+    if (request.status === 'APPROVED') {
+      setWaitingForApproval(false);
 
-        return prev.map((item) =>
-          item.id === request.id
-            ? {
-                id: request.id,
-                userId: request.userId,
-                displayName: request.displayName,
-                status: request.status,
-              }
-            : item
-        );
+      navigate(`/room/${code}`, {
+        replace: true,
+        state: {},
       });
+
+      window.location.reload();
+      return;
     }
+
+    if (request.status === 'REJECTED') {
+      setWaitingForApproval(false);
+      setJoinError('The host declined your request to join.');
+      return;
+    }
+  }
+
+  setWaitingList((prev) => {
+    if (request.status !== 'PENDING') {
+      return prev.filter(
+        (item) => item.id !== request.id
+      );
+    }
+
+    const exists = prev.some((item) => item.id === request.id);
+
+if (!exists) {
+  return [
+    ...prev,
+    {
+      id: request.id,
+      userId: request.userId,
+      displayName: request.displayName,
+      status: request.status,
+    },
+  ];
+}
+
+return prev.map((item) =>
+  item.id === request.id
+    ? {
+        id: request.id,
+        userId: request.userId,
+        displayName: request.displayName,
+        status: request.status,
+      }
+    : item
+);
+  });
+}
   );
 return () => {
   unsubscribe?.();
@@ -218,6 +285,26 @@ return () => {
   useEffect(() => {
     const cleanupDetectors = [];
     socketService.connect();
+    const offTyping = socketService.on('chat:typing', ({
+  userId,
+  username,
+  displayName,
+  isTyping,
+}) => {
+  if (!userId || userId === user.id) return;
+
+  setTypingUsers((prev) => {
+    const next = { ...prev };
+
+    if (isTyping) {
+      next[userId] = displayName || username || 'Someone';
+    } else {
+      delete next[userId];
+    }
+
+    return next;
+  });
+});
 
     const offConnect = socketService.on('connect', () => {
       setConnectionStatus('connected');
@@ -285,11 +372,11 @@ return () => {
   [
     offConnect,
     offDisconnect,
-    
     offMediaState,
     offPeerJoined,
     offPeerOffer,
     offPeerDisconnected,
+    offTyping
   ].forEach((off) => off?.());
 
   cleanupDetectors.forEach((stop) => stop());
@@ -547,14 +634,32 @@ useEffect(() => {
         setUnreadChat((n) => n + 1);
       }
     }
+    
+  );
+  const unsubscribeDelete =
+  chatService.subscribeToDeletedMessages(
+    room.id,
+    (message) => {
+      setMessages((prev) =>
+        prev.filter((m) => m.id !== message.id)
+      );
+    }
   );
 
   return () => {
     cancelled = true;
     unsubscribe?.();
+     unsubscribeDelete?.();
   };
 }, [room?.id, user.id]);
-
+function handleTypingChange(isTyping) {
+  socketService.emit('chat:typing', {
+    isTyping,
+    userId: user.id,
+    username: user.displayName,
+    displayName: user.displayName,
+  });
+}
 async function handleSendMessage(text) {
   if (!room?.id || !user) return;
 
@@ -567,6 +672,16 @@ async function handleSendMessage(text) {
   } catch (err) {
     showToast(
       err.message || 'Could not send message.',
+      'error'
+    );
+  }
+}
+async function handleDeleteMessage(messageId) {
+  try {
+    await chatService.deleteMessage(messageId);
+  } catch (err) {
+    showToast(
+      err.message || 'Could not delete message.',
       'error'
     );
   }
@@ -754,6 +869,17 @@ const handleRejectWaiting = useCallback(async (userId) => {
   color: colorFromId(m.userId),
   self: m.userId === user.id,
 })), [messages, user.id]);
+const typingLabel = useMemo(() => {
+  const names = Object.values(typingUsers);
+
+  if (names.length === 0) return '';
+
+  if (names.length === 1) {
+    return `${names[0]} is typing…`;
+  }
+
+  return `${names.slice(0, 2).join(', ')} are typing…`;
+}, [typingUsers]);
 
  
 
@@ -825,12 +951,15 @@ const handleRejectWaiting = useCallback(async (userId) => {
         onMore={() => setMoreOpen(true)}
       />
 
-    <ChatPanel
+   <ChatPanel
   open={chatOpen}
   onClose={() => setChatOpen(false)}
   messages={chatMessages}
   onSend={handleSendMessage}
+  onDelete={handleDeleteMessage}
   myName={user.displayName}
+  onTypingChange={handleTypingChange}
+  typingLabel={typingLabel}
 />
       <ParticipantsPanel
         open={participantsOpen} onClose={() => setParticipantsOpen(false)}
