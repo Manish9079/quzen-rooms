@@ -1,4 +1,4 @@
-import { Mic, MicOff, Video, VideoOff, ScreenShare, MessageSquare, Users, MoreHorizontal, PhoneOff, Sparkles } from 'lucide-react';
+﻿import { Mic, MicOff, Video, VideoOff, ScreenShare, MessageSquare, Users, MoreHorizontal, PhoneOff, Sparkles } from 'lucide-react';
 import './ControlBar.css';
 
 export default function ControlBar({
@@ -11,7 +11,7 @@ export default function ControlBar({
   return (
     <div className="qz-control-bar">
       <div className="qz-control-bar__group qz-control-bar__group--left">
-        <span className="qz-control-bar__brand"><Sparkles size={15} /> Quzen Rooms</span>
+        <span className="qz-control-bar__brand"><Sparkles size={15} /> Qyzen Rooms</span>
       </div>
 
       <div className="qz-control-bar__group qz-control-bar__group--center">
@@ -45,3 +45,4 @@ export default function ControlBar({
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { SlidersHorizontal, Mic, Bell, ShieldCheck } from 'lucide-react';
+﻿import { SlidersHorizontal, Mic, Bell, ShieldCheck } from 'lucide-react';
 import Toggle from '../components/common/Toggle';
 import { useUser } from '../context/UserContext';
 import { useToast } from '../components/common/Toast';
@@ -37,7 +37,7 @@ export default function Settings() {
         <div className="qz-settings__group qz-neu qz-settings__group--muted">
           <h2><ShieldCheck size={16} strokeWidth={2.2} /> Privacy</h2>
           <p className="qz-settings__note">
-            Quzen Rooms never turns on your camera or microphone without you tapping the control first —
+            Qyzen Rooms never turns on your camera or microphone without you tapping the control first â€”
             every room asks your browser for permission fresh.
           </p>
         </div>
@@ -45,3 +45,4 @@ export default function Settings() {
     </div>
   );
 }
+

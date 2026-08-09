@@ -1,4 +1,4 @@
-// Thin fetch wrapper around the real Quzen Rooms API. Auth is cookie-based
+﻿// Thin fetch wrapper around the real Qyzen Rooms API. Auth is cookie-based
 // (httpOnly access/refresh tokens set by the backend), so every request
 // goes with credentials: 'include' rather than manually attaching a token.
 
@@ -48,3 +48,4 @@ export const apiClient = {
 };
 
 export { BASE_URL };
+

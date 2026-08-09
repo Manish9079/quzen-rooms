@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -96,8 +96,8 @@ export default function ExploreRooms() {
   return (
     <>
       <SEO
-        title="Explore Public Rooms | Quzen Rooms"
-        description="Explore public rooms on Quzen Rooms. Discover study, gaming, music and hangout rooms and join conversations online."
+        title="Explore Public Rooms | Qyzen Rooms"
+        description="Explore public rooms on Qyzen Rooms. Discover study, gaming, music and hangout rooms and join conversations online."
         canonical="https://qyzen.online/explore"
       />
 
@@ -116,7 +116,7 @@ export default function ExploreRooms() {
 
             <TextInput
               icon={Search}
-              placeholder="Search rooms…"
+              placeholder="Search roomsâ€¦"
               value={query}
               onChange={(event) =>
                 setQuery(event.target.value)
@@ -173,7 +173,7 @@ export default function ExploreRooms() {
 
               <p>
                 Try a different category or search
-                term — or start your own room instead.
+                term â€” or start your own room instead.
               </p>
 
               <Button
@@ -197,7 +197,7 @@ export default function ExploreRooms() {
                 >
                   <div className="qz-room-card__top">
                     <Badge tone="live">
-                      ● Live
+                      â— Live
                     </Badge>
 
                     <Badge tone="gray">

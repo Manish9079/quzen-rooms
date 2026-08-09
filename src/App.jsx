@@ -1,4 +1,4 @@
-import {
+﻿import {
   Routes,
   Route,
   useLocation,
@@ -43,8 +43,8 @@ function PrivatePageSEO() {
 
   return (
     <SEO
-      title="Quzen Rooms"
-      description="Quzen Rooms private account and room page."
+      title="Qyzen Rooms"
+      description="Qyzen Rooms private account and room page."
       canonical={`https://qyzen.online${location.pathname}`}
       noindex
     />

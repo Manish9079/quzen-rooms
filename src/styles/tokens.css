@@ -1,7 +1,7 @@
-/* ===================================================================
-   QUZEN ROOMS — DESIGN TOKENS
+﻿/* ===================================================================
+   QYZEN ROOMS â€” DESIGN TOKENS
    Palette: White / Mint / Emerald / Teal / Soft Gray
-   Signature: "Liquid Orb" — a soft morphing glass sphere representing
+   Signature: "Liquid Orb" â€” a soft morphing glass sphere representing
    a room's presence. Reused as room avatars, status glows, loaders.
 =================================================================== */
 
@@ -94,3 +94,5 @@
 @media (prefers-color-scheme: dark) {
   /* Reserved for future dark mode; V1 ships light theme per brief */
 }
+
+

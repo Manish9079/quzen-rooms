@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 
 export default function SEO({
   title,
@@ -69,7 +69,7 @@ export default function SEO({
     setMeta(
       'meta[property="og:site_name"]',
       { property: 'og:site_name' },
-      'Quzen Rooms'
+      'Qyzen Rooms'
     );
 
     setMeta(
@@ -139,7 +139,7 @@ export default function SEO({
     jsonLd.textContent = JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'WebApplication',
-      name: 'Quzen Rooms',
+      name: 'Qyzen Rooms',
       url: 'https://qyzen.online/',
       description:
         'Create or join virtual rooms to chat, make video calls and share your screen with friends.',

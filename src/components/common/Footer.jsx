@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import Logo from './Logo';
 import './Footer.css';
 
@@ -25,8 +25,9 @@ export default function Footer() {
         </div>
       </div>
       <div className="qz-container qz-footer__bottom">
-        <span>© {new Date().getFullYear()} Quzen Rooms · quzen.online</span>
+        <span>Â© {new Date().getFullYear()} Qyzen Rooms Â· qyzen.online</span>
       </div>
     </footer>
   );
 }
+

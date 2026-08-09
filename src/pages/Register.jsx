@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { UserPlus, ArrowRight, Mail, Lock, User, AtSign } from 'lucide-react';
 import { Field, TextInput } from '../components/common/Field';
@@ -61,9 +61,9 @@ if (form.password.length < 8 || !strongPassword) {
     <div className="qz-form-page">
       <div className="qz-container qz-form-page__inner">
         <div className="qz-form-page__intro">
-          <span className="qz-eyebrow"><UserPlus size={13} /> Join Quzen Rooms</span>
+          <span className="qz-eyebrow"><UserPlus size={13} /> Join Qyzen Rooms</span>
           <h1>Create your account</h1>
-          <p>One account gets you into every room — as a host, a co-host, or just a friendly face in the chat.</p>
+          <p>One account gets you into every room â€” as a host, a co-host, or just a friendly face in the chat.</p>
           <Orb size={140} className="qz-form-page__orb" />
         </div>
 
@@ -80,13 +80,13 @@ if (form.password.length < 8 || !strongPassword) {
             </Field>
           </div>
           <Field label="Password" required id="password" hint="At least 8 characters.">
-            <TextInput id="password" icon={Lock} type="password" placeholder="••••••••" value={form.password} onChange={(e) => update('password', e.target.value)} autoComplete="new-password" />
+            <TextInput id="password" icon={Lock} type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={form.password} onChange={(e) => update('password', e.target.value)} autoComplete="new-password" />
           </Field>
 
           {error && <p className="qz-form-error">{error}</p>}
 
           <Button type="submit" size="lg" full icon={ArrowRight} iconPosition="right" disabled={submitting}>
-            {submitting ? 'Creating account…' : 'Create account'}
+            {submitting ? 'Creating accountâ€¦' : 'Create account'}
           </Button>
 
           <p className="qz-form-switch">
@@ -97,3 +97,4 @@ if (form.password.length < 8 || !strongPassword) {
     </div>
   );
 }
+

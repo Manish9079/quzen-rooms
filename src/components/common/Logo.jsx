@@ -1,4 +1,4 @@
-import './Logo.css';
+﻿import './Logo.css';
 
 export default function Logo({ size = 34, withText = true }) {
   return (
@@ -16,7 +16,8 @@ export default function Logo({ size = 34, withText = true }) {
         <circle cx="20.5" cy="20" r="2.6" fill="#EAFBF3" opacity="0.85" />
         <circle cx="26.5" cy="20" r="2.6" fill="#EAFBF3" opacity="0.65" />
       </svg>
-      {withText && <span className="qz-logo__text">Quzen<span>Rooms</span></span>}
+      {withText && <span className="qz-logo__text">Qyzen<span>Rooms</span></span>}
     </div>
   );
 }
+
