@@ -1,20 +1,67 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Compass, Plus, LogIn, LogOut, UserPlus } from 'lucide-react';
+import { Menu, X, Compass, Plus, LogIn, LogOut, UserPlus, Users } from 'lucide-react';
 import Logo from './Logo';
 import Button from './Button';
 import Avatar from './Avatar';
 import { useAuth } from '../../context/AuthContext';
+import { directMessageService } from '../../services/directMessageService';
 import './Navbar.css';
 
 const LINKS = [
   { to: '/explore', label: 'Explore Rooms', icon: Compass },
+  { to: '/friends', label: 'Friends', icon: Users },
 ];
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  useEffect(() => {
+  if (!isAuthenticated || !user?.id) {
+    setUnreadCount(0);
+    return;
+  }
+
+  let unsubscribeIncoming;
+  let unsubscribeUpdates;
+
+  async function loadUnread() {
+    try {
+      const count =
+        await directMessageService.getTotalUnreadCount(user.id);
+
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Could not load navbar unread count:', error);
+    }
+  }
+
+  loadUnread();
+
+  unsubscribeIncoming =
+    directMessageService.subscribeToAllIncoming(
+      user.id,
+      () => {
+        loadUnread();
+      }
+    );
+
+  unsubscribeUpdates =
+    directMessageService.subscribeToAllUpdates(
+      user.id,
+      () => {
+        loadUnread();
+      }
+    );
+
+  return () => {
+    if (unsubscribeIncoming) unsubscribeIncoming();
+    if (unsubscribeUpdates) unsubscribeUpdates();
+  };
+}, [isAuthenticated, user?.id]);
 
   async function handleLogout() {
     setOpen(false);
@@ -32,7 +79,15 @@ export default function Navbar() {
         <nav className={`qz-nav__links ${open ? 'qz-nav__links--open' : ''}`}>
           {LINKS.map(({ to, label, icon: Icon }) => (
             <NavLink key={to} to={to} className={({ isActive }) => `qz-nav__link ${isActive ? 'qz-nav__link--active' : ''}`} onClick={() => setOpen(false)}>
-              <Icon size={17} strokeWidth={2.1} /> {label}
+              <Icon size={17} strokeWidth={2.1} />
+
+<span>{label}</span>
+
+{to === '/friends' && unreadCount > 0 && (
+  <span className="qz-nav__unread">
+    {unreadCount > 99 ? '99+' : unreadCount}
+  </span>
+)}
             </NavLink>
           ))}
           <div className="qz-nav__mobile-actions">

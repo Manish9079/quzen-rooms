@@ -12,9 +12,10 @@ const schema = a
       bio: a.string(),
       avatarUrl: a.string(),
     })
-    .authorization((allow) => [
-      allow.ownerDefinedIn('ownerId'),
-    ]),
+   .authorization((allow) => [
+  allow.authenticated().to(['read']),
+  allow.ownerDefinedIn('ownerId').to(['create', 'update', 'delete']),
+]),
 
   Room: a
     .model({
@@ -71,6 +72,50 @@ const schema = a
   .authorization((allow) => [
     allow.authenticated().to(['create', 'read', 'delete']),
   ]),
+  FriendRequest: a
+.model({
+fromUserId: a.string().required(),
+fromDisplayName: a.string().required(),
+
+toUserId: a.string().required(),
+toDisplayName: a.string().required(),
+
+status: a.string().default('PENDING'),
+})
+.authorization((allow) => [
+allow.authenticated().to(['create', 'read', 'update', 'delete']),
+]),
+
+Friendship: a
+.model({
+userAId: a.string().required(),
+userADisplayName: a.string().required(),
+
+userBId: a.string().required(),
+userBDisplayName: a.string().required(),
+})
+.authorization((allow) => [
+allow.authenticated().to(['create', 'read', 'delete']),
+]),
+
+DirectMessage: a
+.model({
+conversationId: a.string().required(),
+
+senderId: a.string().required(),
+senderDisplayName: a.string().required(),
+
+receiverId: a.string().required(),
+
+body: a.string().required(),
+
+isRead: a.boolean().default(false),
+deletedForSender: a.boolean().default(false),
+deletedForReceiver: a.boolean().default(false),
+})
+.authorization((allow) => [
+allow.authenticated().to(['create', 'read', 'update', 'delete']),
+]),
   createRoomPassword: a
   .mutation()
   .arguments({
