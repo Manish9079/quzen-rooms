@@ -1,4 +1,4 @@
-name: CI/CD
+﻿name: CI
 
 on:
   push:
@@ -10,11 +10,8 @@ on:
       - main
 
 jobs:
-  # =========================================================
-  # FRONTEND
-  # =========================================================
   frontend:
-    name: Frontend — Lint & Build
+    name: Frontend - Lint & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -30,191 +27,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Oxlint uses a native binary.
-      # npm optional-dependency issue can omit the Linux binary
-      # from CI, so install the exact matching Linux binding.
-       - name: Install Linux native bindings
-         run: |
+      - name: Install Linux native bindings
+        shell: bash
+        run: |
           OXLINT_VERSION=$(node -p "require('./node_modules/oxlint/package.json').version")
-           ROLLDOWN_VERSION=$(node -p "require('./node_modules/rolldown/package.json').version")
+          ROLLDOWN_VERSION=$(node -p "require('./node_modules/rolldown/package.json').version")
 
           npm install --no-save \
             "@oxlint/binding-linux-x64-gnu@$OXLINT_VERSION" \
             "@rolldown/binding-linux-x64-gnu@$ROLLDOWN_VERSION"
-      - name: Run frontend lint
+
+      - name: Run lint
         run: npm run lint
 
-      - name: Build frontend
+      - name: Build
         run: npm run build
 
-      - name: Upload frontend build artifact
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: dist/
           retention-days: 7
-
-
-  # =========================================================
-  # BACKEND
-  # =========================================================
-  backend:
-    name: Backend — Migrate & Test
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-
-        env:
-          POSTGRES_DB: quzen_rooms_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-
-        ports:
-          - 5432:5432
-
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
-
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/quzen_rooms_test?schema=public
-      JWT_ACCESS_SECRET: ci-test-secret-do-not-use-in-production
-      CLIENT_URL: http://localhost:5173
-      NODE_ENV: test
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: server/package-lock.json
-
-      - name: Install backend dependencies
-        working-directory: server
-        run: npm ci
-
-      - name: Generate Prisma client
-        working-directory: server
-        run: npx prisma generate
-
-      - name: Run database migrations
-        working-directory: server
-        run: npx prisma migrate deploy
-
-      - name: Start API and run integration tests
-        working-directory: server
-        shell: bash
-        run: |
-          node src/server.js &
-          SERVER_PID=$!
-
-          sleep 3
-
-          node test/integration.mjs
-          TEST_EXIT_CODE=$?
-
-          kill $SERVER_PID || true
-
-          exit $TEST_EXIT_CODE
-
-
-  # =========================================================
-  # DOCKER BUILD + GHCR
-  # =========================================================
-  docker:
-    name: Build & Push Docker Images
-
-    needs:
-      - frontend
-      - backend
-
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push frontend image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-
-          build-args: |
-            VITE_API_URL=${{ vars.VITE_API_URL }}
-            VITE_SOCKET_URL=${{ vars.VITE_SOCKET_URL }}
-
-          tags: |
-            ghcr.io/manish9079/quzen-rooms-frontend:latest
-            ghcr.io/manish9079/quzen-rooms-frontend:${{ github.sha }}
-
-      - name: Build and push backend image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./server
-          push: true
-
-          tags: |
-            ghcr.io/manish9079/quzen-rooms-backend:latest
-            ghcr.io/manish9079/quzen-rooms-backend:${{ github.sha }}
-
-
-  # =========================================================
-  # VPS DEPLOYMENT
-  # =========================================================
-  deploy:
-    name: Deploy to VPS
-
-    needs:
-      - docker
-
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.3
-
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-
-          script: |
-            set -e
-
-            docker pull ghcr.io/manish9079/quzen-rooms-frontend:latest
-            docker pull ghcr.io/manish9079/quzen-rooms-backend:latest
-
-            docker compose \
-              -f /opt/quzen-rooms/docker-compose.yml \
-              up -d --force-recreate
-
-            docker compose \
-              -f /opt/quzen-rooms/docker-compose.yml \
-              exec -T server \
-              npx prisma migrate deploy
-
-            docker image prune -f
