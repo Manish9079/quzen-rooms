@@ -16,7 +16,7 @@
 }
 
 .qz-orb--animated .qz-orb__core {
-  animation: qz-orb-morph 9s var(--qz-ease) infinite;
+  border-radius: 50%;
 }
 
 .qz-orb__ring {
@@ -41,17 +41,15 @@
   filter: blur(1px);
 }
 
-@keyframes qz-orb-morph {
-  0%, 100% { border-radius: 46% 54% 62% 38% / 48% 42% 58% 52%; }
-  33% { border-radius: 62% 38% 48% 52% / 40% 58% 42% 60%; }
-  66% { border-radius: 40% 60% 54% 46% / 60% 44% 56% 40%; }
-}
+
+
 
 @keyframes qz-orb-spin {
   to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .qz-orb--animated .qz-orb__core,
-  .qz-orb--animated .qz-orb__ring { animation: none; }
+  .qz-orb--animated .qz-orb__ring {
+    animation: none;
+  }
 }
