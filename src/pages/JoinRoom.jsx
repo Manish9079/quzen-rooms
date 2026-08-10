@@ -74,7 +74,7 @@ navigate(`/room/${room.code}`);
         <div className="qz-form-page__intro">
           <span className="qz-eyebrow"><KeyRound size={13} /> Join a room</span>
           <h1>Got a code? Walk right in.</h1>
-          <p>Enter the room code someone shared with you â€” codes look like QZN-A7K92.</p>
+          <p>Enter the room code someone shared with you - codes look like QZN-A7K92.</p>
           <Orb size={140} className="qz-form-page__orb" />
         </div>
 
@@ -90,7 +90,7 @@ navigate(`/room/${room.code}`);
             )}
             {error && <p className="qz-form-error">{error}</p>}
             <Button type="submit" size="lg" full icon={ArrowRight} iconPosition="right" disabled={submitting}>
-              {submitting ? 'Joiningâ€¦' : 'Join Room'}
+              {submitting ? 'Joining…' : 'Join Room'}
             </Button>
           </form>
 

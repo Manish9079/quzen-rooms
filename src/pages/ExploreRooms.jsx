@@ -116,7 +116,7 @@ export default function ExploreRooms() {
 
             <TextInput
               icon={Search}
-              placeholder="Search roomsâ€¦"
+              placeholder="Search rooms…"
               value={query}
               onChange={(event) =>
                 setQuery(event.target.value)
@@ -173,7 +173,7 @@ export default function ExploreRooms() {
 
               <p>
                 Try a different category or search
-                term â€” or start your own room instead.
+                term - or start your own room instead.
               </p>
 
               <Button
@@ -197,7 +197,7 @@ export default function ExploreRooms() {
                 >
                   <div className="qz-room-card__top">
                     <Badge tone="live">
-                      â— Live
+                      ● Live
                     </Badge>
 
                     <Badge tone="gray">

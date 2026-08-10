@@ -37,7 +37,7 @@ export default function Settings() {
         <div className="qz-settings__group qz-neu qz-settings__group--muted">
           <h2><ShieldCheck size={16} strokeWidth={2.2} /> Privacy</h2>
           <p className="qz-settings__note">
-            Qyzen Rooms never turns on your camera or microphone without you tapping the control first â€”
+            Qyzen Rooms never turns on your camera or microphone without you tapping the control first -
             every room asks your browser for permission fresh.
           </p>
         </div>

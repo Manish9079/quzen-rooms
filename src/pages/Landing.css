@@ -283,4 +283,169 @@ min-height: 260px;
     transform: scale(0.82);
   }
 
-  
+/* ===== Hero Orb Redesign ===== */
+
+.qz-hero-orb-wrap {
+  position: relative;
+
+  width: 290px;
+  height: 290px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto;
+}
+
+.qz-hero-orb {
+  position: relative;
+  z-index: 3;
+
+  transform: scale(0.82);
+
+  animation: qz-orb-float 5s ease-in-out infinite;
+
+  filter:
+    drop-shadow(0 22px 30px rgba(22, 163, 116, 0.2))
+    drop-shadow(0 0 28px rgba(22, 163, 116, 0.15));
+
+  transition:
+    transform 0.3s ease,
+    filter 0.3s ease;
+}
+
+.qz-hero-orb:hover {
+  transform: scale(0.86) translateY(-3px);
+
+  filter:
+    drop-shadow(0 28px 36px rgba(22, 163, 116, 0.25))
+    drop-shadow(0 0 35px rgba(22, 163, 116, 0.2));
+}
+
+.qz-hero-orb-ring {
+  position: absolute;
+
+  border-radius: 50%;
+
+  border: 1px solid rgba(22, 163, 116, 0.22);
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255, 255, 255, 0.02),
+      rgba(22, 163, 116, 0.03)
+    );
+
+  backdrop-filter: blur(6px);
+
+  pointer-events: none;
+}
+
+.qz-hero-orb-ring--outer {
+  width: 250px;
+  height: 250px;
+
+  animation: qz-ring-pulse 6s ease-in-out infinite;
+}
+
+.qz-hero-orb-ring--inner {
+  width: 205px;
+  height: 205px;
+
+  border-color: rgba(22, 163, 116, 0.3);
+
+  animation: qz-ring-pulse 4.5s ease-in-out infinite reverse;
+}
+
+.qz-hero-orb__actions {
+  position: absolute;
+  left: 50%;
+  bottom: 5px;
+
+  transform: translateX(-50%);
+
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  white-space: nowrap;
+}
+
+.qz-hero-orb__actions .qz-btn {
+  min-width: 125px;
+
+  backdrop-filter: blur(16px);
+
+  box-shadow:
+    0 10px 25px rgba(15, 80, 60, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 768px) {
+  .qz-hero-orb__actions {
+    bottom: -10px;
+    gap: 8px;
+  }
+
+  .qz-hero-orb__actions .qz-btn {
+    min-width: 105px;
+  }
+}
+@keyframes qz-orb-float {
+  0%,
+  100% {
+    transform: scale(0.82) translateY(0);
+  }
+
+  50% {
+    transform: scale(0.82) translateY(-10px);
+  }
+}
+
+@keyframes qz-ring-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .qz-hero-orb-wrap {
+    width: 240px;
+    height: 240px;
+  }
+
+  .qz-hero-orb-ring--outer {
+    width: 210px;
+    height: 210px;
+  }
+
+  .qz-hero-orb-ring--inner {
+    width: 175px;
+    height: 175px;
+  }
+
+  .qz-hero-orb {
+    transform: scale(0.72);
+  }
+
+  @keyframes qz-orb-float {
+    0%,
+    100% {
+      transform: scale(0.72) translateY(0);
+    }
+
+    50% {
+      transform: scale(0.72) translateY(-7px);
+    }
+  }
+}

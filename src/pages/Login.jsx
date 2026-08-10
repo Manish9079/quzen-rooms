@@ -48,13 +48,13 @@ export default function Login() {
             <TextInput id="identifier" icon={Mail} placeholder="you@example.com" value={identifier} onChange={(e) => setIdentifier(e.target.value)} autoComplete="username" />
           </Field>
           <Field label="Password" required id="password">
-            <TextInput id="password" icon={Lock} type="password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+            <TextInput id="password" icon={Lock} type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
           </Field>
 
           {error && <p className="qz-form-error">{error}</p>}
 
           <Button type="submit" size="lg" full icon={ArrowRight} iconPosition="right" disabled={submitting}>
-            {submitting ? 'Logging inâ€¦' : 'Log in'}
+            {submitting ? 'Logging in…' : 'Log in'}
           </Button>
 
           <p className="qz-form-switch">

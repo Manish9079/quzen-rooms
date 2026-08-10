@@ -1,7 +1,7 @@
 ﻿import './Orb.css';
 
 /**
- * The Qyzen "Liquid Orb" â€” signature element. A soft morphing glass
+ * The Qyzen "Liquid Orb" - signature element. A soft morphing glass
  * sphere used as the hero visual, room avatar backdrop and loading
  * indicator. Purely decorative (aria-hidden) unless given a label.
  */

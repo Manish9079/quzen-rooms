@@ -25,7 +25,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="qz-container qz-footer__bottom">
-        <span>Â© {new Date().getFullYear()} Qyzen Rooms Â· qyzen.online</span>
+        <span>© {new Date().getFullYear()} Qyzen Rooms . qyzen.online</span>
       </div>
     </footer>
   );

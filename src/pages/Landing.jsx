@@ -20,7 +20,7 @@ const FEATURES = [
   {
     icon: MessageSquare,
     title: 'Text chat',
-    desc: 'A realtime side panel for every room â€” quips, links and reactions without leaving the call.',
+    desc: 'A realtime side panel for every room - quips, links and reactions without leaving the call.',
   },
   {
     icon: Mic,
@@ -35,7 +35,7 @@ const FEATURES = [
   {
     icon: ScreenShare,
     title: 'Screen share',
-    desc: 'Hand the floor to anyone in one tap â€” coding, gaming or watching together.',
+    desc: 'Hand the floor to anyone in one tap - coding, gaming or watching together.',
   },
   {
     icon: Link2,
@@ -58,7 +58,7 @@ const STEPS = [
   {
     n: '02',
     title: 'Share the code',
-    desc: 'Send your QZN- room code or a direct link â€” friends tap in from anywhere.',
+    desc: 'Send your QZN- room code or a direct link - friends tap in from anywhere.',
   },
   {
     n: '03',
@@ -97,7 +97,7 @@ export default function Landing() {
 
               <p className="qz-hero__sub">
                 Qyzen Rooms is a virtual hangout for the people you
-                actually want to be around â€” drop into a room, talk,
+                actually want to be around - drop into a room, talk,
                 chat, share your screen, and stay as long as it feels
                 good.
               </p>
@@ -146,17 +146,34 @@ export default function Landing() {
               </div>
             </div>
 
-            <div className="qz-hero__visual">
-              <Orb />
+           <div className="qz-hero__visual">
+  <div className="qz-hero-orb-wrap">
+    <div className="qz-hero-orb-ring qz-hero-orb-ring--outer" />
+    <div className="qz-hero-orb-ring qz-hero-orb-ring--inner" />
 
-              <Button
-                as={Link}
-                to="/join"
-                variant="secondary"
-              >
-                Join Room
-              </Button>
-            </div>
+    <div className="qz-hero-orb">
+      <Orb />
+    </div>
+
+    <div className="qz-hero-orb__actions">
+  <Button
+    as={Link}
+    to="/join"
+    variant="secondary"
+  >
+    Join Room
+  </Button>
+
+  <Button
+    as={Link}
+    to="/create"
+    variant="primary"
+  >
+    Create Room
+  </Button>
+</div>
+  </div>
+</div>
           </div>
         </section>
 
@@ -235,7 +252,7 @@ export default function Landing() {
 
                 <p>
                   Spin up a room and drop the link in the
-                  group chat â€” that's the whole invite.
+                  group chat - that's the whole invite.
                 </p>
               </div>
 
