@@ -90,3 +90,10 @@
 
   box-shadow: 0 4px 10px rgba(22, 163, 116, 0.25);
 }
+
+@media (max-width: 420px) {
+  .qz-nav { height: 64px; }
+  .qz-nav__links { top: 64px; }
+  .qz-nav__brand { min-width: 0; }
+  .qz-nav__burger { padding: 8px 4px; }
+}

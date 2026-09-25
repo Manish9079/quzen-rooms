@@ -19,4 +19,9 @@
 .qz-toast--error svg { color: #F0A5A5; }
 .qz-toast--info svg { color: #9FD8F0; }
 
+@media (max-width: 420px) {
+  .qz-toast-stack { left: 12px; right: 12px; transform: none; bottom: 16px; }
+  .qz-toast { width: 100%; padding: 11px 14px; font-size: 13px; }
+}
+
 @keyframes qz-toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

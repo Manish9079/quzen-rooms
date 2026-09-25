@@ -113,6 +113,16 @@
     padding: 30px 14px 70px;
   }
 
+  .qz-friends__head h1 { font-size: 30px; }
+
+  .qz-friends__search {
+    flex-wrap: wrap;
+    padding: 10px;
+  }
+
+  .qz-friends__search input { flex-basis: calc(100% - 34px); }
+  .qz-friends__search .qz-btn { width: 100%; }
+
   .qz-friend-card {
     padding: 12px;
     gap: 10px;

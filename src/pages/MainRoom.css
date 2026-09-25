@@ -484,6 +484,15 @@
 @media (max-width: 640px) {
   .qz-room__body { padding: 12px; }
 }
+
+@media (max-width: 420px) {
+  .qz-room__body { padding: 8px; gap: 8px; }
+  .qz-video-grid { gap: 8px; }
+  .qz-room__spotlight { min-height: 170px; }
+  .qz-room-settings { padding: 14px; }
+  .qz-room-settings__head { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .qz-room-settings__status { align-self: flex-start; }
+}
 .qz-screen-share-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;

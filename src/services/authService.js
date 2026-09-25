@@ -16,7 +16,9 @@ export const authService = {
   async me() {
     return apiClient.get('/auth/me');
   },
-  async confirmRegistration(email, code) {
-  return { email, code };
-},
+  async confirmRegistration() {
+    throw new Error(
+      'Email verification is not available yet because the Express API has no verification endpoint.'
+    );
+  },
 };

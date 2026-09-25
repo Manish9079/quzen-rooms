@@ -58,21 +58,27 @@ setUnreadCounts(counts);
     loadFriendsData();
   }, [loadFriendsData]);
   useEffect(() => {
-  const unsubscribe =
-    directMessageService.subscribeToAllIncoming(
-      user.id,
-      (message) => {
-        setUnreadCounts((current) => ({
-          ...current,
-          [message.senderId]:
-            (current[message.senderId] || 0) + 1,
-        }));
+  let unsubscribe;
 
-        showToast(
-          `${message.senderDisplayName} sent you a message`
-        );
-      }
-    );
+  try {
+    unsubscribe =
+      directMessageService.subscribeToAllIncoming(
+        user.id,
+        (message) => {
+          setUnreadCounts((current) => ({
+            ...current,
+            [message.senderId]:
+              (current[message.senderId] || 0) + 1,
+          }));
+
+          showToast(
+            `${message.senderDisplayName} sent you a message`
+          );
+        }
+      );
+  } catch (error) {
+    console.error('Could not subscribe to direct messages:', error);
+  }
 
   return () => {
     if (unsubscribe) unsubscribe();

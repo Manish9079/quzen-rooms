@@ -6,3 +6,11 @@
 .qz-footer__cols a { display: block; font-size: 14px; color: var(--qz-gray-500); margin-bottom: 10px; transition: color var(--qz-t-fast); }
 .qz-footer__cols a:hover { color: var(--qz-emerald-600); }
 .qz-footer__bottom { padding: 20px 0; border-top: 1px solid rgba(184, 209, 197, 0.3); font-size: 13px; color: var(--qz-gray-400); }
+
+@media (max-width: 640px) {
+	.qz-footer { margin-top: 64px; padding-top: 36px; }
+	.qz-footer__inner { gap: 28px; padding-bottom: 26px; }
+	.qz-footer__brand,
+	.qz-footer__cols { width: 100%; }
+	.qz-footer__cols { justify-content: space-between; gap: 24px; }
+}

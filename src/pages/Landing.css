@@ -285,6 +285,22 @@ min-height: 260px;
   display: none;
 }
 
+@media (max-width: 980px) {
+  .qz-landing .qz-hero__inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .qz-landing .qz-hero__copy {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .qz-landing .qz-hero__signal {
+    width: min(320px, calc(100vw - 28px));
+  }
+}
+
 /* Final landing overrides */
 .qz-landing {
   background-color: #fbfaf5;

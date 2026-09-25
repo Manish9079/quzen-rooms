@@ -26,5 +26,11 @@
 }
 .qz-modal__close:hover { background: var(--qz-gray-200); color: var(--qz-ink-800); }
 
+@media (max-width: 420px) {
+  .qz-modal-overlay { padding: 12px; }
+  .qz-modal { padding: 20px 16px 22px; border-radius: var(--qz-r-lg); }
+  .qz-modal__header h3 { font-size: 18px; }
+}
+
 @keyframes qz-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes qz-modal-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
