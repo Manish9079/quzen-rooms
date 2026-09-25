@@ -41,21 +41,25 @@ export default function Navbar() {
 
   loadUnread();
 
-  unsubscribeIncoming =
-    directMessageService.subscribeToAllIncoming(
-      user.id,
-      () => {
-        loadUnread();
-      }
-    );
+  try {
+    unsubscribeIncoming =
+      directMessageService.subscribeToAllIncoming(
+        user.id,
+        () => {
+          loadUnread();
+        }
+      );
 
-  unsubscribeUpdates =
-    directMessageService.subscribeToAllUpdates(
-      user.id,
-      () => {
-        loadUnread();
-      }
-    );
+    unsubscribeUpdates =
+      directMessageService.subscribeToAllUpdates(
+        user.id,
+        () => {
+          loadUnread();
+        }
+      );
+  } catch (error) {
+    console.error('Could not subscribe to direct messages:', error);
+  }
 
   return () => {
     if (unsubscribeIncoming) unsubscribeIncoming();

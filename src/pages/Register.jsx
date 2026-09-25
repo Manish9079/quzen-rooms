@@ -44,12 +44,7 @@ if (form.password.length < 8 || !strongPassword) {
         email: form.email.trim().toLowerCase(),
         password: form.password,
       });
-      navigate('/verify-email', {
-      replace: true,
-      state: {
-      email: form.email.trim().toLowerCase(),
-        },
-     });
+      navigate('/explore', { replace: true });
     } catch (err) {
       setError(err.message || 'Could not create your account. Please try again.');
     } finally {
