@@ -1,11 +1,10 @@
-import * as path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import * as assets from 'aws-cdk-lib/aws-ecr-assets';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
@@ -17,13 +16,17 @@ export class QuzenRoomsStack extends cdk.Stack {
 
     const clientUrl = this.node.tryGetContext('clientUrl') || 'https://qyzen.online';
     const cookieDomain = this.node.tryGetContext('cookieDomain') || 'qyzen.online';
+    const apiDomain = this.node.tryGetContext('apiDomain') || 'api.qyzen.online';
+    const certificateArn = this.node.tryGetContext('certificateArn');
+    const imageTag = this.node.tryGetContext('imageTag') || 'bootstrap';
+    const desiredCount = Number(this.node.tryGetContext('desiredCount') ?? 1);
 
     const vpc = new ec2.Vpc(this, 'Vpc', {
       maxAzs: 2,
       natGateways: 1,
     });
 
-    const tableProps = { partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING }, billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, pointInTimeRecovery: true, removalPolicy: cdk.RemovalPolicy.RETAIN };
+    const tableProps = { partitionKey: { name: 'id', type: dynamodb.AttributeType.STRING }, billingMode: dynamodb.BillingMode.PAY_PER_REQUEST, pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true }, removalPolicy: cdk.RemovalPolicy.RETAIN };
     const usersTable = new dynamodb.Table(this, 'UsersTable', tableProps);
     const roomsTable = new dynamodb.Table(this, 'RoomsTable', tableProps);
     const participantsTable = new dynamodb.Table(this, 'ParticipantsTable', tableProps);
@@ -38,6 +41,13 @@ export class QuzenRoomsStack extends cdk.Stack {
     const userPoolClient = userPool.addClient('WebClient', { authFlows: { userPassword: true, userSrp: true } });
 
     const cluster = new ecs.Cluster(this, 'Cluster', { vpc });
+    const apiRepository = new ecr.Repository(this, 'ApiRepository', {
+      repositoryName: 'quzen-rooms-api',
+      encryption: ecr.RepositoryEncryption.AES_256,
+      imageScanOnPush: true,
+      lifecycleRules: [{ maxImageCount: 10 }],
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'ApiTask', {
       cpu: 512,
       memoryLimitMiB: 1024,
@@ -51,16 +61,13 @@ export class QuzenRoomsStack extends cdk.Stack {
     const jwtSecret = new secretsmanager.Secret(this, 'JwtSecret', {
       generateSecretString: { passwordLength: 64, excludePunctuation: true },
     });
-    const image = new assets.DockerImageAsset(this, 'ApiImage', {
-      directory: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../server'),
-    });
     const logGroup = new logs.LogGroup(this, 'ApiLogs', {
       retention: logs.RetentionDays.ONE_MONTH,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
     const container = taskDefinition.addContainer('Api', {
-      image: ecs.ContainerImage.fromDockerImageAsset(image),
+      image: ecs.ContainerImage.fromEcrRepository(apiRepository, imageTag),
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'quzen-api', logGroup }),
       environment: {
         NODE_ENV: 'production',
@@ -88,12 +95,13 @@ export class QuzenRoomsStack extends cdk.Stack {
         startPeriod: cdk.Duration.seconds(20),
       },
     });
+    apiRepository.grantPull(taskDefinition.executionRole!);
     container.addPortMappings({ containerPort: 4000 });
 
     const service = new ecs.FargateService(this, 'ApiService', {
       cluster,
       taskDefinition,
-      desiredCount: 1,
+      desiredCount,
       assignPublicIp: false,
       vpcSubnets: { subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS },
     });
@@ -101,15 +109,42 @@ export class QuzenRoomsStack extends cdk.Stack {
       vpc,
       internetFacing: true,
     });
-    const listener = loadBalancer.addListener('Http', { port: 80, open: true });
-    listener.addTargets('ApiTarget', {
+
+    const certificate = certificateArn
+      ? acm.Certificate.fromCertificateArn(this, 'ApiCertificate', certificateArn)
+      : new acm.Certificate(this, 'ApiCertificate', {
+        domainName: apiDomain,
+        validation: acm.CertificateValidation.fromDns(),
+      });
+
+    const httpsListener = loadBalancer.addListener('Https', {
+      port: 443,
+      open: true,
+      certificates: [certificate],
+    });
+    httpsListener.addTargets('ApiTarget', {
       port: 4000,
       protocol: elbv2.ApplicationProtocol.HTTP,
       targets: [service],
       healthCheck: { path: '/api/health', healthyHttpCodes: '200-399' },
     });
 
-    new cdk.CfnOutput(this, 'ApiUrl', { value: `http://${loadBalancer.loadBalancerDnsName}` });
+    const httpListener = loadBalancer.addListener('HttpRedirect', { port: 80, open: true });
+    httpListener.addAction('RedirectToHttps', {
+      action: elbv2.ListenerAction.redirect({
+        protocol: elbv2.ApplicationProtocol.HTTPS,
+        port: '443',
+        permanent: true,
+      }),
+    });
+
+    new cdk.CfnOutput(this, 'ApiUrl', { value: `https://${apiDomain}` });
+    new cdk.CfnOutput(this, 'SocketUrl', { value: `wss://${apiDomain}` });
+    new cdk.CfnOutput(this, 'ApiDomain', { value: apiDomain });
+    new cdk.CfnOutput(this, 'LoadBalancerDnsName', { value: loadBalancer.loadBalancerDnsName });
+    new cdk.CfnOutput(this, 'CertificateArn', { value: certificate.certificateArn });
+    new cdk.CfnOutput(this, 'EcrRepositoryUri', { value: apiRepository.repositoryUri });
+    new cdk.CfnOutput(this, 'EcrImageTag', { value: imageTag });
     new cdk.CfnOutput(this, 'JwtSecretArn', { value: jwtSecret.secretArn });
     new cdk.CfnOutput(this, 'UserPoolId', { value: userPool.userPoolId });
     new cdk.CfnOutput(this, 'UserPoolClientId', { value: userPoolClient.userPoolClientId });
