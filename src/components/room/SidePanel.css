@@ -156,3 +156,32 @@
     margin: 4px 14px 12px;
   }
 }
+
+.qz-side-panel {
+  background: #151d1b;
+  border-left-color: rgba(255, 255, 255, 0.1);
+  box-shadow: -18px 0 48px rgba(0, 0, 0, 0.24);
+}
+.qz-side-panel__head { border-bottom-color: rgba(255, 255, 255, 0.09); }
+.qz-side-panel__head h3,
+.qz-participant-row__name,
+.qz-waiting-room__name { color: #eef7f3; }
+.qz-side-panel__head button,
+.qz-participant-row__actions button { background: #202a28; color: #dcebe5; }
+.qz-side-panel__head button:hover,
+.qz-participant-row__actions button:hover { background: #2b3935; }
+.qz-chat__bubble { background: #202a28; color: #e7f2ed; }
+.qz-chat__msg--self .qz-chat__bubble { background: #0e8862; }
+.qz-chat__composer { border-top-color: rgba(255, 255, 255, 0.09); }
+.qz-chat__composer input { background: #202a28; color: #eff8f4; }
+.qz-chat__composer button,
+.qz-participants__invite button { background: #0e8862; }
+.qz-participants__invite { background: #202a28; }
+.qz-participants__invite span { color: #a9bbb4; }
+.qz-participant-row:hover { background: #202a28; }
+.qz-participant-row__host { color: #78dcb4; }
+.qz-participant-row__host--co { color: #8fd7cb; }
+.qz-participant-row__off { color: #a9bbb4; }
+.qz-waiting-room { background: rgba(224, 166, 60, 0.1); }
+.qz-waiting-room__reject { background: #2b3935; color: #c7d5cf; }
+.qz-participant-row__remove:hover { background: #2b3935 !important; color: #dbe8e2 !important; }

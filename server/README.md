@@ -1,14 +1,14 @@
 # Quzen Rooms — Backend
 
-Production backend for [Quzen Rooms](../README.md): Express, PostgreSQL,
-Prisma, Socket.IO, JWT auth (httpOnly cookies), and WebRTC signaling.
+Production backend for [Quzen Rooms](../README.md): Express, DynamoDB,
+Socket.IO, JWT auth (httpOnly cookies), and WebRTC signaling.
 Nothing here is mocked — every endpoint and socket event does real work
 against a real database. See "How this was verified" below for exactly
 how that was proven before delivery.
 
 ## Stack
 
-Node.js · Express · PostgreSQL · Prisma · Socket.IO · JWT + bcrypt ·
+Node.js · Express · DynamoDB · Socket.IO · JWT + bcrypt ·
 Zod · Helmet · CORS · express-rate-limit · cookie-parser
 
 ## Project layout
@@ -16,7 +16,7 @@ Zod · Helmet · CORS · express-rate-limit · cookie-parser
 ```
 server/
   src/
-    config/       env, Prisma client, CORS
+    config/       env, DynamoDB adapter, CORS
     controllers/  thin HTTP handlers
     services/     business logic (auth, user, room, message, presence)
     middleware/   auth, room authorization, validation, rate limiting, errors
@@ -26,10 +26,6 @@ server/
     utils/        JWT, bcrypt, opaque tokens, room codes, cookies
     app.js        Express app (no listen)
     server.js     HTTP server + Socket.IO + graceful shutdown
-  prisma/
-    schema.prisma
-    migrations/   hand-verified initial migration (see below)
-  test/           integration test + verification fixture (see below) — not part of the runtime app
   Dockerfile
   docker-compose.yml (at repo root)
   .env.example
@@ -40,13 +36,7 @@ server/
 ```bash
 cd server
 npm install
-cp .env.example .env        # then edit DATABASE_URL, JWT_ACCESS_SECRET, etc.
-
-# Create the database (adjust for your Postgres setup)
-createdb quzen_rooms
-
-npx prisma generate
-npx prisma migrate deploy   # applies prisma/migrations/20260805000000_init
+cp .env.example .env        # then edit AWS table names, JWT_ACCESS_SECRET, etc.
 
 npm run dev                 # http://localhost:4000, auto-reload via `node --watch`
 ```
@@ -71,49 +61,16 @@ Open the app, register an account, create a room, and open the same room
 in a second browser (or incognito window) as a second account to see
 realtime chat, presence, and video/screen-share negotiate live.
 
-## How this was verified
+## Verification
 
-This backend was built and tested in a sandboxed environment whose
-network policy blocks `binaries.prisma.sh` — the CDN `npx prisma
-generate` and `npx prisma migrate dev` need to fetch Prisma's engine.
-That's a constraint of the build environment, not of your machine: on
-a normal connection those commands in **Setup** above will work exactly
-as shown.
-
-To still prove the actual application logic — not just that it reads
-correctly — end to end against a real, running PostgreSQL database
-without that CDN access:
-
-1. **Schema**: `prisma/migrations/20260805000000_init/migration.sql` was
-   applied directly via `psql` to a real local Postgres instance and
-   confirmed to produce all 7 tables, 3 enums, every index, and every
-   foreign key correctly.
-2. **Application logic**: `test/devPrismaShim.js` hand-implements the
-   ~20 Prisma Client calls this codebase actually makes (grepped from
-   `src/`), backed by the real `pg` driver against that same database.
-   Swapped in only for testing (see `test/integration.mjs`), it let the
-   real, unmodified `app.js`/`server.js`/socket handlers boot and run
-   against real Postgres.
-3. **`test/integration.mjs`** then exercises the whole system over real
-   HTTP + Socket.IO connections: register/duplicate-rejection/login/
-   wrong-password/refresh-rotation/logout, profile updates, room create
-   (public + private + password-required validation), public room
-   search, join (password-protected + open), host-only delete/update
-   enforcement, participant listing, message history, leave-room host
-   handoff, unauthenticated-socket rejection, and a full realtime
-   round-trip between two real socket connections: room join, chat
-   message + typing indicator, WebRTC offer/answer relay, host lock,
-   and waiting-room approval. **46/46 checks passed** against real
-   Postgres on the final run.
-
-Both `test/devPrismaShim.js` and `test/integration.mjs` are verification
-fixtures only — they're not imported by `app.js`/`server.js` and don't
-ship as part of the running application. You can delete `server/test/`
-entirely; nothing else references it.
+The production runtime uses the DynamoDB adapter in `src/config/dynamo.js`.
+Run HTTP and Socket.IO integration checks against the deployed AWS tables
+before production cutover.
 
 ## Environment variables
 
-See `.env.example`. Required: `DATABASE_URL`, `JWT_ACCESS_SECRET`. Also
+See `.env.example`. Required: `AWS_REGION`, the five DynamoDB table names,
+and `JWT_ACCESS_SECRET`. Also
 review `CLIENT_URL` (CORS allowlist), `COOKIE_SECURE` (set `true` behind
 HTTPS in production), and the rate-limit maxes.
 
@@ -146,7 +103,7 @@ access token, sent explicitly by `socketService.js`) or the
 
 Locked rooms hold new joiners in an in-memory waiting room
 (`services/presence.store.js`) until the host approves or rejects them
-— intentionally in-memory rather than in Postgres, since it's ephemeral
+— intentionally in-memory rather than in DynamoDB, since it's ephemeral
 session state; the store's interface is written so it's a drop-in swap
 for Redis once you run more than one server process.
 
@@ -162,7 +119,7 @@ exactly that swap.
 ## Deployment
 
 ```
-GitHub → GitHub Actions → Docker → VPS/AWS → Nginx → Node.js → PostgreSQL
+GitHub → GitHub Actions → Docker → ECS Fargate → Application Load Balancer → DynamoDB
 ```
 
 ```bash
@@ -173,6 +130,7 @@ docker compose up -d
 ```
 
 `GET /api/health` reports `{ success, data: { status, database, uptime } }`
-and returns 503 if Postgres is unreachable — point your load balancer's
-health check at it. Run `npx prisma migrate deploy` (not `migrate dev`)
-as part of your deploy step, before starting the new server instance.
+and returns 503 if DynamoDB is unreachable. The current adapter uses scans
+for compatibility; add GSIs and atomic transactions before scaling beyond
+the initial deployment. Cognito session migration and existing-data import
+remain follow-up operations documented in `infra/README.md`.

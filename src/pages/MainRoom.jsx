@@ -19,6 +19,17 @@ import { mediaService } from '../services/mediaService';
 import { colorFromId } from '../utils/format';
 import './MainRoom.css';
 
+function messageForUi(message, currentUserId) {
+  return {
+    ...message,
+    text: message.text ?? message.body ?? '',
+    author: message.author?.displayName || message.displayName || 'Participant',
+    userId: message.userId || message.author?.id,
+    self: (message.userId || message.author?.id) === currentUserId,
+    color: '#16A374',
+  };
+}
+
 export default function MainRoom() {
   const { code } = useParams();
   const navigate = useNavigate();
@@ -103,7 +114,7 @@ useEffect(() => {
 setEditRoomName(foundRoom.name || '');
 setEditRoomDescription(foundRoom.description || '');
 setEditMaxParticipants(foundRoom.maxParticipants || 8);
-      const { members } = await roomService.getRoomMembers(foundRoom.id);
+      const { participants: members } = await roomService.getRoomMembers(foundRoom.code);
 
 if (cancelled) return;
 
@@ -116,22 +127,6 @@ setParticipants(
     role: member.role || 'MEMBER',
   }))
 );
-const { requests } =
-  await roomService.getWaitingRequests(foundRoom.id);
-
-if (cancelled) return;
-
-setWaitingList(
-  requests
-    .filter((request) => request.status === 'PENDING')
-    .map((request) => ({
-      id: request.id,
-      userId: request.userId,
-      displayName: request.displayName,
-      status: request.status,
-    }))
-);
-
       addRecentRoom({
         name: foundRoom.name,
         code: foundRoom.code,
@@ -151,12 +146,12 @@ setWaitingList(
   return () => {
     cancelled = true;
   };
-}, [code, user.id, user.displayName, addRecentRoom]);
+  }, [code, user.id, user.displayName, addRecentRoom]);
 useEffect(() => {
-  if (!room?.id) return undefined;
+  if (!room?.code) return undefined;
 
   const unsubscribe = roomService.subscribeToRoomMembers(
-    room.id,
+    room.code,
 
     (member) => {
       setParticipants((prev) => {
@@ -204,7 +199,7 @@ useEffect(() => {
 );
 const unsubscribeWaiting =
   roomService.subscribeToWaitingRequests(
-    room.id,
+  room.code,
 
     (request) => {
       if (request.status !== 'PENDING') return;
@@ -287,7 +282,7 @@ return () => {
   unsubscribe?.();
   unsubscribeWaiting?.();
 };
-}, [room?.id, user.id, navigate, showToast]);
+}, [room?.code, user.id, navigate, showToast, code]);
   useEffect(() => {
     const cleanupDetectors = [];
     socketService.connect();
@@ -607,16 +602,16 @@ if (!sharingScreen) {
 
 
 useEffect(() => {
-  if (!room?.id) return undefined;
+  if (!room?.code) return undefined;
 
   let cancelled = false;
 
   async function loadChat() {
     try {
-      const { messages: history } = await chatService.getHistory(room.id);
+      const { messages: history } = await chatService.getHistory(room.code);
 
       if (!cancelled) {
-        setMessages(history);
+        setMessages(history.map((message) => messageForUi(message, user.id)));
       }
     } catch (err) {
       console.error('Could not load chat history:', err);
@@ -626,14 +621,15 @@ useEffect(() => {
   loadChat();
 
   const unsubscribe = chatService.subscribeToMessages(
-    room.id,
+    room.code,
     (message) => {
+      const nextMessage = messageForUi(message, user.id);
       setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) {
+      if (prev.some((m) => m.id === nextMessage.id)) {
           return prev;
         }
 
-        return [...prev, message];
+        return [...prev, nextMessage];
       });
 
       if (!chatOpenRef.current && message.userId !== user.id) {
@@ -644,7 +640,7 @@ useEffect(() => {
   );
   const unsubscribeDelete =
   chatService.subscribeToDeletedMessages(
-    room.id,
+    room.code,
     (message) => {
       setMessages((prev) =>
         prev.filter((m) => m.id !== message.id)
@@ -657,7 +653,7 @@ useEffect(() => {
     unsubscribe?.();
      unsubscribeDelete?.();
   };
-}, [room?.id, user.id]);
+}, [room?.code, user.id]);
 function handleTypingChange(isTyping) {
   socketService.emit('chat:typing', {
     isTyping,
@@ -667,11 +663,11 @@ function handleTypingChange(isTyping) {
   });
 }
 async function handleSendMessage(text) {
-  if (!room?.id || !user) return;
+  if (!room?.code || !user) return;
 
   try {
     await chatService.send(
-      room.id,
+      room.code,
       user,
       text
     );
@@ -706,8 +702,8 @@ function handleCopyInvite() {
 
   async function handleLeave() {
   try {
-    if (room?.id && user?.id) {
-      await roomService.leaveRoom(room.id, user.id);
+    if (room?.code && user?.id) {
+      await roomService.leaveRoom(room.code);
     }
 
     navigate('/explore');
@@ -716,7 +712,7 @@ function handleCopyInvite() {
   }
 }
   async function handleDeleteRoom() {
-  if (!room?.id) return;
+  if (!room?.code) return;
 
   const confirmed = window.confirm(
     'Are you sure you want to delete this room?'
@@ -725,7 +721,7 @@ function handleCopyInvite() {
   if (!confirmed) return;
 
   try {
-    await roomService.deleteRoom(room.id);
+    await roomService.deleteRoom(room.code);
 
     showToast('Room deleted successfully.');
     navigate('/explore', { replace: true });
@@ -738,11 +734,11 @@ function handleCopyInvite() {
 }
 
 async function handleSaveRoomSettings() {
-  if (!room?.id) return;
+  if (!room?.code) return;
 
   try {
     const { room: updatedRoom } =
-      await roomService.updateRoom(room.id, {
+      await roomService.updateRoom(room.code, {
         name: editRoomName.trim(),
         description: editRoomDescription.trim(),
         maxParticipants: Number(editMaxParticipants) || 8,
@@ -759,13 +755,13 @@ async function handleSaveRoomSettings() {
   }
 }
   async function handleToggleLock() {
-  if (!room?.id) return;
+  if (!room?.code) return;
 
   try {
     const nextLocked = !room.isLocked;
 
     const { room: updatedRoom } =
-      await roomService.setRoomLock(room.id, nextLocked);
+      await roomService.setRoomLock(room.code, nextLocked);
 
     setRoom(updatedRoom);
 
@@ -781,10 +777,10 @@ async function handleSaveRoomSettings() {
 }
 
   const handleRemoveParticipant = useCallback(async (p) => {
-  if (!room?.id) return;
+  if (!room?.code) return;
 
   try {
-    await roomService.removeMember(room.id, p.id);
+    await roomService.removeMember(room.code, p.id);
 
     showToast('Participant removed.');
   } catch (err) {
@@ -793,15 +789,15 @@ async function handleSaveRoomSettings() {
       'error'
     );
   }
-}, [room?.id, showToast]);
+}, [room?.code, showToast]);
 const handleToggleCoHost = useCallback(async (p) => {
-  if (!room?.id) return;
+  if (!room?.code) return;
 
   try {
     const nextRole = p.isCoHost ? 'MEMBER' : 'CO_HOST';
 
     await roomService.setMemberRole(
-      room.id,
+      room.code,
       p.id,
       nextRole
     );
@@ -825,10 +821,10 @@ const handleToggleCoHost = useCallback(async (p) => {
       'error'
     );
   }
-}, [room?.id, showToast]);
+}, [room?.code, showToast]);
 
  const handleApproveWaiting = useCallback(async (userId) => {
-  if (!room?.id) return;
+  if (!room?.code) return;
 
   const request = waitingList.find(
     (item) => item.userId === userId
@@ -839,7 +835,7 @@ const handleToggleCoHost = useCallback(async (p) => {
   try {
     await roomService.approveWaitingRequest(
       request.id,
-      room.id,
+      room.code,
       request.userId,
       request.displayName
     );
@@ -851,7 +847,7 @@ const handleToggleCoHost = useCallback(async (p) => {
       'error'
     );
   }
-}, [room?.id, waitingList, showToast]);
+}, [room?.code, waitingList, showToast]);
 
 const handleRejectWaiting = useCallback(async (userId) => {
   const request = waitingList.find(
@@ -861,7 +857,7 @@ const handleRejectWaiting = useCallback(async (userId) => {
   if (!request) return;
 
   try {
-    await roomService.rejectWaitingRequest(request.id);
+    await roomService.rejectWaitingRequest(request.id, room.code, userId);
     showToast('Join request rejected.');
   } catch (err) {
     showToast(
@@ -869,7 +865,7 @@ const handleRejectWaiting = useCallback(async (userId) => {
       'error'
     );
   }
-}, [waitingList, showToast]);
+}, [room?.code, waitingList, showToast]);
 
   const displayParticipants = useMemo(() => participants.map((p) => {
     const isMe = p.user.id === user.id;
@@ -1064,6 +1060,8 @@ const typingLabel = useMemo(() => {
         onToggleParticipants={() => { setParticipantsOpen((o) => !o); setChatOpen(false); }}
         participantsOpen={participantsOpen} participantCount={participants.length}
         onLeave={handleLeave}
+        onEndMeeting={handleDeleteRoom}
+        canEndMeeting={myParticipant?.role === 'HOST'}
         onMore={() => setMoreOpen(true)}
       />
 

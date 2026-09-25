@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import { db as prisma } from '../config/dynamo.js';
 
 /**
  * Tracks coarse online/offline status (separate from per-room presence in

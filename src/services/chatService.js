@@ -1,84 +1,24 @@
-import { dataClient } from './dataClient';
+import { apiClient } from './apiClient';
+import { socketService } from './socketService';
 
 export const chatService = {
-  async getHistory(roomId) {
-    const { data, errors } = await dataClient.models.Message.list({
-      filter: {
-        roomId: {
-          eq: roomId,
-        },
-      },
-    });
-
-    if (errors?.length) {
-      throw new Error(errors[0].message || 'Could not load messages');
-    }
-
-    return {
-      messages: [...data].sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      ),
-    };
+  async getHistory(roomCode) {
+    return apiClient.get(`/rooms/${encodeURIComponent(roomCode)}/messages`);
   },
 
-  async send(roomId, user, body) {
-    const { data, errors } = await dataClient.models.Message.create({
-      roomId,
-      userId: user.id,
-      displayName: user.displayName,
-      body,
-    });
-
-    if (errors?.length) {
-      throw new Error(errors[0].message || 'Could not send message');
-    }
-
-    return {
-      ok: true,
-      message: data,
-    };
+  async send(_roomCode, _user, body) {
+    return socketService.emitAck('chat:send', { body });
   },
 
-  subscribeToMessages(roomId, handler) {
-    const subscription = dataClient.models.Message.onCreate().subscribe({
-      next: (message) => {
-        if (message.roomId === roomId) {
-          handler(message);
-        }
-      },
-      error: (err) => {
-        console.error('Message subscription error:', err);
-      },
-    });
-
-    return () => subscription.unsubscribe();
+  subscribeToMessages(_roomCode, handler) {
+    return socketService.on('chat:message', handler);
   },
+
   async deleteMessage(messageId) {
-  const { data, errors } = await dataClient.models.Message.delete({
-    id: messageId,
-  });
+    return socketService.emitAck('chat:deleteMessage', { messageId });
+  },
 
-  if (errors?.length) {
-    throw new Error(
-      errors[0].message || 'Could not delete message'
-    );
-  }
-
-  return { ok: true, message: data };
-},
-
-subscribeToDeletedMessages(roomId, handler) {
-  const subscription = dataClient.models.Message.onDelete().subscribe({
-    next: (message) => {
-      if (message.roomId === roomId) {
-        handler(message);
-      }
-    },
-    error: (err) => {
-      console.error('Message delete subscription error:', err);
-    },
-  });
-
-  return () => subscription.unsubscribe();
-},
+  subscribeToDeletedMessages(_roomCode, handler) {
+    return socketService.on('chat:messageDeleted', handler);
+  },
 };

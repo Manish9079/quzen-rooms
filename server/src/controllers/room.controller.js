@@ -12,6 +12,11 @@ export const listPublicRooms = asyncHandler(async (req, res) => {
   ok(res, result);
 });
 
+export const listMyRooms = asyncHandler(async (req, res) => {
+  const result = await roomService.listRoomsForHost(req.user.id);
+  ok(res, result);
+});
+
 export const getRoom = asyncHandler(async (req, res) => {
   const room = await roomService.getRoomByCode(req.params.code, { includeParticipants: true });
   ok(res, { room });

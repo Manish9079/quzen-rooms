@@ -1,78 +1,22 @@
-import {
-  signUp,
-  signIn,
-  signOut,
-  getCurrentUser,
-  fetchUserAttributes,
-  confirmSignUp,
-} from 'aws-amplify/auth';
+import { apiClient } from './apiClient';
 
 export const authService = {
   async register({ username, displayName, email, password }) {
-    const result = await signUp({
-      username: email,
-      password,
-      options: {
-        userAttributes: {
-          email,
-          preferred_username: username,
-          name: displayName,
-        },
-      },
-    });
-
-    return {
-      ...result,
-      email,
-      username,
-      displayName,
-    };
+    return apiClient.post('/auth/register', { username, displayName, email, password });
   },
 
   async login({ identifier, password }) {
-    const result = await signIn({
-      username: identifier,
-      password,
-    });
-
-    if (!result.isSignedIn) {
-      return result;
-    }
-
-    const currentUser = await getCurrentUser();
-    const attributes = await fetchUserAttributes();
-
-    return {
-      user: {
-        id: currentUser.userId,
-        email: attributes.email,
-        username: attributes.preferred_username,
-        displayName: attributes.name,
-      },
-    };
+    return apiClient.post('/auth/login', { identifier, password });
   },
 
   async logout() {
-    await signOut();
+    await apiClient.post('/auth/logout');
   },
 
   async me() {
-    const currentUser = await getCurrentUser();
-    const attributes = await fetchUserAttributes();
-
-    return {
-      user: {
-        id: currentUser.userId,
-        email: attributes.email,
-        username: attributes.preferred_username,
-        displayName: attributes.name,
-      },
-    };
+    return apiClient.get('/auth/me');
   },
   async confirmRegistration(email, code) {
-  return confirmSignUp({
-    username: email,
-    confirmationCode: code,
-  });
+  return { email, code };
 },
 };

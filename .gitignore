@@ -39,3 +39,6 @@ node_modules
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+!amplify_outputs.json
+cdk.out/
+cdk.context.json

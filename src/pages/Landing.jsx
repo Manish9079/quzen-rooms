@@ -1,4 +1,5 @@
-﻿import { Link } from 'react-router-dom';
+﻿import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Compass,
@@ -13,6 +14,7 @@ import {
 import Button from '../components/common/Button';
 import Orb from '../components/common/Orb';
 import SEO from '../components/common/SEO';
+import { roomService } from '../services/roomService';
 
 import './Landing.css';
 
@@ -68,6 +70,38 @@ const STEPS = [
 ];
 
 export default function Landing() {
+  const [roomActivity, setRoomActivity] = useState({ status: 'loading', count: 0, name: '' });
+
+  useEffect(() => {
+    let active = true;
+
+    roomService.getPublicRooms({ page: 1, limit: 1 })
+      .then((result) => {
+        if (!active) return;
+        setRoomActivity({
+          status: 'ready',
+          count: result.pagination?.total || 0,
+          name: result.rooms?.[0]?.name || '',
+        });
+      })
+      .catch(() => {
+        if (active) setRoomActivity({ status: 'empty', count: 0, name: '' });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const activityLabel = roomActivity.status === 'loading'
+    ? 'Checking public rooms'
+    : roomActivity.count > 0
+      ? `${roomActivity.count} public room${roomActivity.count === 1 ? '' : 's'} open`
+      : 'No public rooms open yet';
+
+  const activityRoom = roomActivity.name || 'Public room activity';
+  const activityCount = roomActivity.status === 'ready' ? roomActivity.count : '—';
+
   return (
     <>
       <SEO
@@ -86,20 +120,16 @@ export default function Landing() {
               </span>
 
               <h1 className="qz-hero__title">
-                Your Space.
-                <br />
-                Your People.
+                Meet. Talk.
                 <br />
                 <span className="qz-hero__title-accent">
-                  Your Room.
+                  Share a Space.
                 </span>
               </h1>
 
               <p className="qz-hero__sub">
-                Qyzen Rooms is a virtual hangout for the people you
-                actually want to be around - drop into a room, talk,
-                chat, share your screen, and stay as long as it feels
-                good.
+                Create a room, invite your people, and connect through
+                video, chat, and screen sharing - all in one place.
               </p>
 
               <div className="qz-hero__cta">
@@ -115,12 +145,12 @@ export default function Landing() {
 
                 <Button
                   as={Link}
-                  to="/explore"
+                  to="/join"
                   size="lg"
-                  variant="secondary"
+                  variant="primary"
                   icon={Compass}
                 >
-                  Explore Rooms
+                  Join by Link / Code
                 </Button>
               </div>
 
@@ -140,40 +170,28 @@ export default function Landing() {
                 </div>
 
                 <span>
-                  Rooms are open right now across Study, Gaming,
-                  Music & more
+                  Rooms are open across Study, Gaming, Music, and more.
                 </span>
               </div>
             </div>
 
-           <div className="qz-hero__visual">
-  <div className="qz-hero-orb-wrap">
-    <div className="qz-hero-orb-ring qz-hero-orb-ring--outer" />
-    <div className="qz-hero-orb-ring qz-hero-orb-ring--inner" />
-
-    <div className="qz-hero-orb">
-      <Orb />
-    </div>
-
-    <div className="qz-hero-orb__actions">
-  <Button
-    as={Link}
-    to="/join"
-    variant="secondary"
-  >
-    Join Room
-  </Button>
-
-  <Button
-    as={Link}
-    to="/create"
-    variant="primary"
-  >
-    Create Room
-  </Button>
-</div>
-  </div>
-</div>
+            <div className="qz-hero__signal" aria-label="Live room activity">
+              <div className="qz-hero__signal-orbit qz-hero__signal-orbit--one" />
+              <div className="qz-hero__signal-orbit qz-hero__signal-orbit--two" />
+              <div className="qz-hero__signal-core">
+                <span className="qz-hero__signal-live"><i /> Live data</span>
+                <strong>{activityCount}</strong>
+                <span>public rooms</span>
+              </div>
+              <div className="qz-hero__signal-card qz-hero__signal-card--top">
+                <span className="qz-hero__signal-avatar">+</span>
+                <span>{activityRoom}</span>
+              </div>
+              <div className="qz-hero__signal-card qz-hero__signal-card--bottom">
+                <span className="qz-hero__signal-bars"><i /><i /><i /><i /></span>
+                <span>{activityLabel}</span>
+              </div>
+            </div>
           </div>
         </section>
 

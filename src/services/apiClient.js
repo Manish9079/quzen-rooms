@@ -1,51 +1,43 @@
-﻿// Thin fetch wrapper around the real Qyzen Rooms API. Auth is cookie-based
-// (httpOnly access/refresh tokens set by the backend), so every request
-// goes with credentials: 'include' rather than manually attaching a token.
-
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
-let onUnauthorized = null;
-/** Lets AuthContext react (e.g. clear user state) whenever any request 401s. */
-export function setUnauthorizedHandler(handler) {
-  onUnauthorized = handler;
-}
-
-async function request(path, { method = 'GET', body, headers = {}, skipAuthRedirect = false } = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+async function request(path, { method = 'GET', body, retry = true } = {}) {
+  const response = await fetch(`${BASE_URL}${path}`, {
     method,
     credentials: 'include',
-    headers: body ? { 'Content-Type': 'application/json', ...headers } : headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 
   let payload = null;
-  try { payload = await res.json(); } catch { /* empty body, e.g. some 204s */ }
+  try { payload = await response.json(); } catch { /* empty response */ }
 
-  if (!res.ok || !payload?.success) {
-    if (res.status === 401 && !skipAuthRedirect) onUnauthorized?.();
-    const message = payload?.message || `Request failed (${res.status})`;
-    const error = new Error(message);
-    error.status = res.status;
+  if (response.status === 401 && retry && !path.startsWith('/auth/')) {
+    const refreshed = await request('/auth/refresh', { method: 'POST', retry: false }).catch(() => null);
+    if (refreshed) return request(path, { method, body, retry: false });
+  }
+
+  if (!response.ok || payload?.success === false) {
+    const error = new Error(payload?.message || `Request failed (${response.status})`);
+    error.status = response.status;
     error.details = payload?.details;
     throw error;
   }
 
-  return payload.data;
+  return payload?.data;
 }
 
-function toQueryString(params = {}) {
-  const clean = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''));
-  const qs = new URLSearchParams(clean).toString();
-  return qs ? `?${qs}` : '';
+function query(params = {}) {
+  const values = Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '');
+  const search = new URLSearchParams(values).toString();
+  return search ? `?${search}` : '';
 }
 
 export const apiClient = {
-  get: (path, opts) => request(path, opts),
-  post: (path, body, opts) => request(path, { method: 'POST', body, ...opts }),
-  patch: (path, body, opts) => request(path, { method: 'PATCH', body, ...opts }),
-  delete: (path, opts) => request(path, { method: 'DELETE', ...opts }),
-  toQueryString,
+  get: (path) => request(path),
+  post: (path, body) => request(path, { method: 'POST', body }),
+  patch: (path, body) => request(path, { method: 'PATCH', body }),
+  delete: (path) => request(path, { method: 'DELETE' }),
+  query,
 };
 
 export { BASE_URL };
-

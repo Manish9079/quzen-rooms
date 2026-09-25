@@ -31,31 +31,6 @@ export function AuthProvider({ children }) {
     if (result?.user) {
       setUser(result.user);
 
-      // Load Amplify Data only when it is actually needed.
-      const { dataClient } = await import('../services/dataClient');
-
-      const { data: profiles } =
-        await dataClient.models.UserProfile.list({
-          filter: {
-            ownerId: {
-              eq: result.user.id,
-            },
-          },
-        });
-
-      if (!profiles.length) {
-        await dataClient.models.UserProfile.create({
-          ownerId: result.user.id,
-          username:
-            result.user.username ||
-            result.user.email.split('@')[0],
-          displayName:
-            result.user.displayName ||
-            result.user.email,
-          email: result.user.email,
-        });
-      }
-
       return result.user;
     }
 
@@ -63,7 +38,9 @@ export function AuthProvider({ children }) {
   }, []);
 
   const register = useCallback(async (payload) => {
-    return authService.register(payload);
+    const result = await authService.register(payload);
+    if (result?.user) setUser(result.user);
+    return result;
   }, []);
 
   const logout = useCallback(async () => {

@@ -11,7 +11,7 @@ export function errorHandler(err, req, res, next) {
     return fail(res, err.statusCode, err.message, err.details);
   }
 
-  // Prisma unique-constraint violation -> 409, without leaking internals.
+  // Preserve the API's conflict response for uniqueness failures from any adapter.
   if (err?.code === 'P2002') {
     const field = err.meta?.target?.[0] || 'field';
     return fail(res, 409, `That ${field} is already taken.`);

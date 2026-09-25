@@ -1,7 +1,7 @@
 import { verifyAccessToken } from '../utils/jwt.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { prisma } from '../config/prisma.js';
+import { db as prisma } from '../config/dynamo.js';
 
 function extractToken(req) {
   const header = req.headers.authorization;
@@ -42,3 +42,8 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
   }
   next();
 });
+
+export function verifySocketToken(token) {
+  if (!token) return null;
+  return verifyAccessToken(token);
+}

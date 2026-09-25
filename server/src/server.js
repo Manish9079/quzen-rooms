@@ -2,7 +2,7 @@ import http from 'node:http';
 import { createApp } from './app.js';
 import { initSocket } from './socket/index.js';
 import { env } from './config/env.js';
-import { prisma } from './config/prisma.js';
+import { db } from './config/dynamo.js';
 
 const app = createApp();
 const httpServer = http.createServer(app);
@@ -17,7 +17,7 @@ async function shutdown(signal) {
   // eslint-disable-next-line no-console
   console.log(`\n${signal} received. Shutting down...`);
   httpServer.close(async () => {
-    await prisma.$disconnect();
+    await db.$disconnect();
     process.exit(0);
   });
   setTimeout(() => process.exit(1), 8000).unref();

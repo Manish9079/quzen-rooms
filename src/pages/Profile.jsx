@@ -168,7 +168,7 @@ useEffect(() => {
     if (!ok) return;
 
     try {
-      await roomService.deleteRoom(room.id);
+      await roomService.deleteRoom(room.code);
 
       setMyRooms((prev) =>
         prev.filter((r) => r.id !== room.id)

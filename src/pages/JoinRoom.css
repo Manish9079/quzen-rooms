@@ -13,3 +13,28 @@
 .qz-recent-room-btn:hover { box-shadow: var(--qz-shadow-pressed); }
 .qz-recent-room-btn__name { font-weight: 700; font-size: 14px; color: var(--qz-ink-800); }
 .qz-recent-room-btn__code { font-family: var(--qz-font-mono); font-size: 12.5px; color: var(--qz-emerald-600); font-weight: 600; }
+
+.qz-join-preview {
+  margin-bottom: 22px;
+  padding: 16px;
+  border: 1px solid rgba(22, 163, 116, 0.16);
+  border-radius: var(--qz-r-md);
+  background: #f3f8f3;
+}
+.qz-join-preview__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.qz-join-preview__eyebrow { display: block; margin-bottom: 4px; color: var(--qz-emerald-600); font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.qz-join-preview h2 { color: var(--qz-ink-900); font-size: 17px; }
+.qz-join-preview__name { max-width: 42%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--qz-ink-700); font-size: 12px; font-weight: 700; }
+.qz-join-preview__stage { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 14px; background: #17211e; }
+.qz-join-preview__stage video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.qz-join-preview__stage--empty { display: grid; place-items: center; }
+.qz-join-preview__empty { display: flex; align-items: center; gap: 8px; color: #b7cdc2; font-size: 12px; }
+.qz-join-preview__controls { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+.qz-preview-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 8px 11px; border: 1px solid rgba(22, 163, 116, 0.2); border-radius: var(--qz-r-pill); background: #fff; color: var(--qz-ink-700); cursor: pointer; font-size: 12px; font-weight: 700; }
+.qz-preview-toggle--off { background: #e8eeea; color: var(--qz-gray-500); }
+.qz-join-preview__error { margin-top: 10px; color: #9a6b20; font-size: 11px; line-height: 1.45; }
+
+@media (max-width: 640px) {
+  .qz-join-preview { padding: 13px; }
+  .qz-join-preview__name { max-width: 46%; }
+}

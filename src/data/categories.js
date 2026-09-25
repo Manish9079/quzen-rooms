@@ -1,6 +1,6 @@
 import { GraduationCap, Gamepad2, Sparkles, Cpu, Code2, Music2, Coffee, Grid2x2, MoreHorizontal } from 'lucide-react';
 
-// Ids match the backend's RoomCategory enum (prisma/schema.prisma) exactly
+// Ids match the backend room category contract exactly.
 // so values round-trip without translation.
 export const CATEGORIES = [
   { id: 'ALL', label: 'All Rooms', icon: Grid2x2 },

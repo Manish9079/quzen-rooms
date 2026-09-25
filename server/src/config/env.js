@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-const required = ['DATABASE_URL', 'JWT_ACCESS_SECRET'];
+const required = ['JWT_ACCESS_SECRET', 'AWS_REGION', 'DYNAMO_USERS_TABLE', 'DYNAMO_ROOMS_TABLE', 'DYNAMO_PARTICIPANTS_TABLE', 'DYNAMO_MESSAGES_TABLE', 'DYNAMO_REFRESH_TOKENS_TABLE'];
 
 for (const key of required) {
   if (!process.env[key]) {
@@ -16,7 +16,15 @@ export const env = {
   isProd: process.env.NODE_ENV === 'production',
   port: Number(process.env.PORT) || 4000,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  databaseUrl: process.env.DATABASE_URL,
+  awsRegion: process.env.AWS_REGION,
+  dynamoEndpoint: process.env.DYNAMO_ENDPOINT || undefined,
+  dynamoTables: {
+    users: process.env.DYNAMO_USERS_TABLE,
+    rooms: process.env.DYNAMO_ROOMS_TABLE,
+    participants: process.env.DYNAMO_PARTICIPANTS_TABLE,
+    messages: process.env.DYNAMO_MESSAGES_TABLE,
+    refreshTokens: process.env.DYNAMO_REFRESH_TOKENS_TABLE,
+  },
 
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET,
   jwtAccessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',

@@ -11,6 +11,7 @@ const schema = a
       email: a.email().required(),
       bio: a.string(),
       avatarUrl: a.string(),
+      onlineStatus: a.boolean().default(false),
     })
    .authorization((allow) => [
   allow.authenticated().to(['read']),
@@ -28,6 +29,10 @@ const schema = a
       isPrivate: a.boolean().default(false),
       isLocked: a.boolean().default(false),
       maxParticipants: a.integer().default(8),
+      chatEnabled: a.boolean().default(true),
+      videoEnabled: a.boolean().default(true),
+      screenShareEnabled: a.boolean().default(true),
+      closedAt: a.datetime(),
     })
     .authorization((allow) => [
       allow.authenticated().to(['read']),
@@ -48,6 +53,8 @@ const schema = a
     userId: a.string().required(),
     displayName: a.string().required(),
     role: a.string().default('MEMBER'),
+    joinedAt: a.datetime(),
+    leftAt: a.datetime(),
   })
   .authorization((allow) => [
     allow.authenticated().to(['create', 'read', 'update', 'delete']),
@@ -68,6 +75,7 @@ const schema = a
     userId: a.string().required(),
     displayName: a.string().required(),
     body: a.string().required(),
+    deletedAt: a.datetime(),
   })
   .authorization((allow) => [
     allow.authenticated().to(['create', 'read', 'delete']),
@@ -112,6 +120,8 @@ body: a.string().required(),
 isRead: a.boolean().default(false),
 deletedForSender: a.boolean().default(false),
 deletedForReceiver: a.boolean().default(false),
+  createdAt: a.datetime(),
+  readAt: a.datetime(),
 })
 .authorization((allow) => [
 allow.authenticated().to(['create', 'read', 'update', 'delete']),

@@ -1,7 +1,6 @@
 // Local, deterministic-enough room code generator for V1.
 // Format: QZN-XXXXX (uppercase alphanumerics, ambiguous chars removed).
-// Replace with a server-issued, collision-checked code once the
-// REST API (services/api.js) is live.
+// Room codes are issued when rooms are created and stored with the room record.
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I, O, 0, 1
 

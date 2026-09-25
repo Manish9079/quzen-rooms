@@ -5,14 +5,14 @@
 Quzen Rooms is a virtual hangout platform — create or join a room, then
 text chat, talk, video call, and share your screen with the people you
 invite. This repo is the full stack for **quzen.online**: a React + Vite
-frontend and a real Node/Express/PostgreSQL/Socket.IO backend. Nothing
+frontend and a real Node/Express/DynamoDB/Socket.IO backend. Nothing
 is mocked — accounts, rooms, chat, and WebRTC signaling all run against
 a real database and real realtime connections.
 
 ```
 quzen-rooms/
   src/            React + Vite frontend (this README)
-  server/         Express + Prisma + Socket.IO backend — see server/README.md
+  server/         Express + DynamoDB + Socket.IO backend — see server/README.md
 ```
 
 ## What works today
@@ -36,9 +36,7 @@ quzen-rooms/
 # 1. Backend — see server/README.md for full details
 cd server
 npm install
-cp .env.example .env        # edit DATABASE_URL / JWT_ACCESS_SECRET
-npx prisma generate
-npx prisma migrate deploy
+cp .env.example .env        # edit AWS table names / JWT_ACCESS_SECRET
 npm run dev                 # http://localhost:4000
 
 # 2. Frontend — in a second terminal, from the repo root
@@ -57,15 +55,15 @@ between two real connections.
 
 - **React 19 + Vite** (rolldown-powered build), React Router, Lucide
   React icons, plain modern CSS with a token system — no CSS framework
-- **Backend**: Node.js, Express, PostgreSQL, Prisma, Socket.IO, JWT +
+- **Backend**: Node.js, Express, DynamoDB, Socket.IO, JWT +
   bcrypt, Zod, Helmet, CORS, express-rate-limit — see `server/README.md`
 
 ## Frontend service layer
 
 ```
 src/services/
-  apiClient.js      fetch wrapper — credentials: 'include', consistent error shape
-  authService.js     register/login/logout/refresh/me, profile, password
+  authService.js     Amplify Auth register/login/logout/me and email confirmation
+  dataClient.js      configured Amplify Data client for application models
   roomService.js      create/join/leave/delete/update rooms, public explorer, messages history
   socketService.js    shared Socket.IO connection (auth rides the same cookies)
   chatService.js      message send/typing/delete, built on socketService + roomService
@@ -92,6 +90,8 @@ Typography: Sora (display), Plus Jakarta Sans (body), JetBrains Mono
 (room codes and other data-like text).
 
 ## Deployment
+
+The AWS deployment shape is documented in [infra/README.md](infra/README.md): Amplify Hosting serves the frontend, ECS Fargate runs the API and Socket.IO signaling, and DynamoDB stores application data.
 
 ```
 GitHub → GitHub Actions → Docker/VPS → Nginx → quzen.online
@@ -120,7 +120,7 @@ GitHub → GitHub Actions → Docker/VPS → Nginx → quzen.online
   `localStorage` is used only for non-sensitive device preferences
   (join-with-mic-on, chat sounds, recent rooms).
 - See `server/README.md` for exactly how the backend was verified
-  end-to-end against a real PostgreSQL database and real Socket.IO
+  end-to-end against AWS DynamoDB and real Socket.IO
   connections before delivery, including a note on one sandbox-specific
   network constraint encountered while building it (not present on a
   normal machine or in CI).

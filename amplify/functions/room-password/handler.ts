@@ -58,7 +58,7 @@ export const handler = async (event: any) => {
 
     const passwordHash = hashPassword(password);
 
-    const { data, errors } =
+    const { errors } =
       await client.models.RoomSecret.create({
         roomId,
         ownerId,

@@ -53,7 +53,7 @@ export default function ExploreRooms() {
           const roomsWithCounts = await Promise.all(
             fetched.map(async (room) => {
               const { members } =
-                await roomService.getRoomMembers(room.id);
+                await roomService.getRoomMembers(room.code);
 
               return {
                 ...room,

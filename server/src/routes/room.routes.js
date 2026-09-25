@@ -13,6 +13,7 @@ const router = Router();
 
 router.post('/', requireAuth, validate(createRoomSchema), roomController.createRoom);
 router.get('/public', validate(publicRoomsQuerySchema, 'query'), roomController.listPublicRooms);
+router.get('/mine', requireAuth, roomController.listMyRooms);
 router.get('/:code', roomController.getRoom);
 router.post('/:code/join', requireAuth, validate(joinRoomSchema), roomController.joinRoom);
 router.post('/:code/leave', requireAuth, loadRoom, roomController.leaveRoom);

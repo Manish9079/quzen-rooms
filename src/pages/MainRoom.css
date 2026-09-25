@@ -461,6 +461,29 @@
     flex-basis: 130px;
   }
 }
+
+.qz-room {
+  background: #101716;
+  color: #e8f2ee;
+}
+
+.qz-room__body {
+  padding: 18px 22px;
+  gap: 14px;
+  background: #101716;
+}
+
+.qz-video-grid { gap: 12px; }
+.qz-room__spotlight,
+.qz-screen-share-layout__main { background: #050908; }
+.qz-room__spotlight-label { background: rgba(5, 9, 8, 0.78); color: #e8f2ee; }
+.qz-screen-share-thumb { border-color: rgba(255, 255, 255, 0.1); }
+.qz-screen-share-thumb:hover { border-color: #35c996; }
+.qz-room__banner { background: rgba(224, 166, 60, 0.14); color: #f0c25c; }
+
+@media (max-width: 640px) {
+  .qz-room__body { padding: 12px; }
+}
 .qz-screen-share-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 220px;

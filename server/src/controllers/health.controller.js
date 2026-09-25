@@ -1,10 +1,10 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
-import { prisma } from '../config/prisma.js';
+import { db } from '../config/dynamo.js';
 
 export const health = asyncHandler(async (req, res) => {
   let dbStatus = 'ok';
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await db.$queryRaw();
   } catch {
     dbStatus = 'unreachable';
   }

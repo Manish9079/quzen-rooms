@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import { db as prisma } from '../config/dynamo.js';
 import { ApiError } from '../utils/ApiError.js';
 import { generateRoomCode, normalizeRoomCode } from '../utils/roomCode.js';
 import { hashPassword, comparePassword } from '../utils/hash.js';
@@ -71,7 +71,7 @@ export async function createRoom(hostId, input) {
     },
   });
 
-  // Explicit second write (rather than a Prisma nested `participants: { create }`)
+  // Explicit second write so the host membership row exists before reads.
   // so the host's membership row always exists before anyone can query it.
   await prisma.roomParticipant.create({ data: { roomId: room.id, userId: hostId, role: 'HOST' } });
 
@@ -106,6 +106,15 @@ export async function listPublicRooms({ category, search, page, limit }) {
     rooms: rooms.map((r) => serializeRoom(r)),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
   };
+}
+
+export async function listRoomsForHost(hostId) {
+  const rooms = await prisma.room.findMany({
+    where: { hostId, closedAt: null },
+    include: { host: hostPreview, _count: { select: { participants: { where: { leftAt: null } } } } },
+    orderBy: { createdAt: 'desc' },
+  });
+  return { rooms: rooms.map((room) => serializeRoom(room)) };
 }
 
 export async function getRoomByCode(code, { includeParticipants = false } = {}) {
@@ -185,7 +194,7 @@ export async function leaveRoom(roomId, userId) {
 }
 
 export async function deleteRoom(roomId) {
-  await prisma.room.delete({ where: { id: roomId } }); // cascades to participants + messages
+  await prisma.room.delete({ where: { id: roomId } });
 }
 
 export async function updateRoom(room, patch) {

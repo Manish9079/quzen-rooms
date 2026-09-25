@@ -90,3 +90,21 @@
     font-size: 10.5px;
   }
 }
+
+.qz-room-header {
+  padding: 14px 22px;
+  background: #151d1b;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.qz-room-header__left h1 { color: #f1f8f5; }
+.qz-room-header__lock,
+.qz-room-header__invite {
+  background: #202a28;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e6f1ed;
+}
+.qz-room-header__lock:hover,
+.qz-room-header__invite:hover { background: #2b3935; }
+.qz-room-header__code { color: #58d6a8; }
+.qz-visibility-pill { background: rgba(22, 163, 116, 0.16); color: #7de0b8; }
+.qz-visibility-pill--locked { background: rgba(224, 166, 60, 0.16); color: #f0c25c; }

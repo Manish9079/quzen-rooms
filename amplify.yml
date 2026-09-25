@@ -1,17 +1,5 @@
 version: 1
 
-backend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-        - PARCEL_VERSION=$(node -p "require('./node_modules/@parcel/watcher/package.json').version")
-        - npm install --no-save "@parcel/watcher-linux-x64-glibc@$PARCEL_VERSION"
-
-    build:
-      commands:
-        - npx ampx pipeline-deploy --branch $AWS_BRANCH --app-id $AWS_APP_ID
-
 frontend:
   phases:
     preBuild:

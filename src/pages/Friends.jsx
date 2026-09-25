@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, UserPlus, Check, X, MessageCircle } from 'lucide-react';
 import { directMessageService } from '../services/directMessageService';
@@ -25,7 +25,7 @@ export default function Friends() {
   const [unreadCounts, setUnreadCounts] = useState({});
   const [loading, setLoading] = useState(true);
 
-  async function loadFriendsData() {
+  const loadFriendsData = useCallback(async () => {
     try {
       const [incoming, friendList] = await Promise.all([
         friendService.getIncomingRequests(user.id),
@@ -52,11 +52,11 @@ setUnreadCounts(counts);
     } finally {
       setLoading(false);
     }
-  }
+  }, [showToast, user.id]);
 
   useEffect(() => {
     loadFriendsData();
-  }, [user.id]);
+  }, [loadFriendsData]);
   useEffect(() => {
   const unsubscribe =
     directMessageService.subscribeToAllIncoming(

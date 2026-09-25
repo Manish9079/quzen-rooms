@@ -11,10 +11,10 @@
  */
 export function registerWebrtcHandlers(io, socket) {
   socket.on('webrtc:ready', () => {
-    if (!socket.data.roomId) return;
+    if (!socket.data.roomCode) return;
     // Tell existing peers a new one is ready to negotiate, and tell the
     // new peer who's already there so it can initiate offers to each.
-    socket.to(socket.data.roomId).emit('webrtc:peerJoined', {
+    socket.to(socket.data.roomCode).emit('webrtc:peerJoined', {
       socketId: socket.id,
       userId: socket.user.id,
       username: socket.user.username,
@@ -37,8 +37,8 @@ export function registerWebrtcHandlers(io, socket) {
   });
 
   socket.on('media:state', ({ micOn, cameraOn, screenSharing } = {}) => {
-    if (!socket.data.roomId) return;
-    socket.to(socket.data.roomId).emit('media:state', {
+    if (!socket.data.roomCode) return;
+    socket.to(socket.data.roomCode).emit('media:state', {
       userId: socket.user.id,
       socketId: socket.id,
       micOn: Boolean(micOn),
@@ -48,8 +48,8 @@ export function registerWebrtcHandlers(io, socket) {
   });
 
   socket.on('disconnect', () => {
-    if (socket.data.roomId) {
-      socket.to(socket.data.roomId).emit('webrtc:peerDisconnected', { socketId: socket.id, userId: socket.user.id });
+    if (socket.data.roomCode) {
+      socket.to(socket.data.roomCode).emit('webrtc:peerDisconnected', { socketId: socket.id, userId: socket.user.id });
     }
   });
 }

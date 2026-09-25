@@ -40,10 +40,14 @@ export default function CreateRoom() {
 const { room } = await roomService.createRoom(
   {
     name: roomName.trim(),
+    description: '',
     category,
     isPrivate,
     password: isPrivate ? password.trim() : '',
     maxParticipants,
+    chatEnabled,
+    videoEnabled,
+    screenShareEnabled,
     hostDisplayName: user.displayName,
   },
   user.id

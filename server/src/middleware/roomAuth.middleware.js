@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import { db as prisma } from '../config/dynamo.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { normalizeRoomCode } from '../utils/roomCode.js';

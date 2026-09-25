@@ -48,3 +48,14 @@
   opacity: 0;
   pointer-events: none;
 }
+
+.qz-tile {
+  background: #1a2422;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+.qz-tile--speaking {
+  box-shadow: 0 0 0 2px #35c996, 0 12px 28px rgba(0, 0, 0, 0.28);
+}
+.qz-tile__tag { background: rgba(22, 163, 116, 0.9); color: #effff8; }
+.qz-tile__muted-icon { color: #b7c7c1; background: rgba(15, 22, 21, 0.8); }

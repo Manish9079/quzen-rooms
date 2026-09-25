@@ -1,7 +1,6 @@
 // Thin localStorage wrapper for V1 persistence. Every key is namespaced
-// under "quzen:" so this can later be swapped for a real user-settings
-// API (see services/api.js) without touching call sites much — keep the
-// same function names, change the implementation.
+// under "quzen:" so the local preference storage stays isolated from other
+// applications using the same browser profile.
 
 const NS = 'quzen';
 

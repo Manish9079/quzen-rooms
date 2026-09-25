@@ -1,4 +1,4 @@
-import { prisma } from '../config/prisma.js';
+import { db as prisma } from '../config/dynamo.js';
 import { ApiError } from '../utils/ApiError.js';
 import { hashPassword, comparePassword, generateOpaqueToken, hashToken } from '../utils/hash.js';
 import { signAccessToken } from '../utils/jwt.js';

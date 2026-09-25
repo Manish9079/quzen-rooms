@@ -7,10 +7,10 @@
 
 :root {
   /* ---- Color: base surfaces ---- */
-  --qz-white:        #FBFDFC;
-  --qz-white-soft:   #F3F8F6;
-  --qz-surface:      #EFF6F3;
-  --qz-surface-2:    #E7F1EC;
+  --qz-white:        #FCFBF7;
+  --qz-white-soft:   #F5F7F2;
+  --qz-surface:      #EEF4EF;
+  --qz-surface-2:    #E2EEE6;
 
   /* ---- Color: mint / emerald / teal ramp ---- */
   --qz-mint-50:  #EAF8F1;
@@ -25,15 +25,15 @@
   --qz-teal-500:  #34A99B;
 
   /* ---- Color: ink / gray (green-cast neutrals) ---- */
-  --qz-ink-900: #0D1F19;
-  --qz-ink-800: #163029;
-  --qz-ink-700: #223F36;
-  --qz-ink-600: #3A544A;
-  --qz-gray-500: #64796F;
-  --qz-gray-400: #8A9C92;
-  --qz-gray-300: #B7C6BE;
-  --qz-gray-200: #D8E4DE;
-  --qz-gray-100: #ECF3EF;
+  --qz-ink-900: #17211E;
+  --qz-ink-800: #23302B;
+  --qz-ink-700: #34433D;
+  --qz-ink-600: #4A5A53;
+  --qz-gray-500: #697870;
+  --qz-gray-400: #8B9991;
+  --qz-gray-300: #B9C5BD;
+  --qz-gray-200: #D8E2DA;
+  --qz-gray-100: #EDF2ED;
 
   /* ---- Semantic ---- */
   --qz-danger: #E15B5B;
@@ -46,9 +46,9 @@
   --qz-grad-mint: linear-gradient(160deg, #EAF8F1 0%, #D3F1E2 45%, #A9E4C7 100%);
   --qz-grad-glass: linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.12) 100%);
   --qz-grad-orb: radial-gradient(circle at 32% 28%, #E9FFF6 0%, #7DD6AC 38%, #16A374 68%, #0A6B4E 100%);
-  --qz-grad-bg: radial-gradient(circle at 12% -10%, #EAF8F1 0%, transparent 45%),
-                radial-gradient(circle at 100% 0%, #DDF3E9 0%, transparent 40%),
-                linear-gradient(180deg, #FBFDFC 0%, #F3F8F6 100%);
+  --qz-grad-bg: radial-gradient(circle at 12% -10%, #F2F6E9 0%, transparent 45%),
+                radial-gradient(circle at 100% 0%, #E3F2E8 0%, transparent 40%),
+                linear-gradient(180deg, #FCFBF7 0%, #F4F7F2 100%);
 
   /* ---- Typography ---- */
   --qz-font-display: 'Sora', 'Segoe UI', sans-serif;
