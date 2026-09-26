@@ -31,7 +31,7 @@ function messageForUi(message, currentUserId) {
 }
 
 export default function MainRoom() {
-  const { code } = useParams();
+  const { roomCode: code } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const showToast = useToast();
@@ -114,7 +114,7 @@ useEffect(() => {
 setEditRoomName(foundRoom.name || '');
 setEditRoomDescription(foundRoom.description || '');
 setEditMaxParticipants(foundRoom.maxParticipants || 8);
-      const { participants: members } = await roomService.getRoomMembers(foundRoom.code);
+      const { members } = await roomService.getRoomMembers(foundRoom.code);
 
 if (cancelled) return;
 
