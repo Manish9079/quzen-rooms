@@ -5,7 +5,7 @@ import { Menu, X, Compass, Plus, LogIn, LogOut, UserPlus, Users } from 'lucide-r
 import Logo from './Logo';
 import Button from './Button';
 import Avatar from './Avatar';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/useAuth.js';
 import { directMessageService } from '../../services/directMessageService';
 import './Navbar.css';
 

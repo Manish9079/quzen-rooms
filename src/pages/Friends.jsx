@@ -5,8 +5,8 @@ import { directMessageService } from '../services/directMessageService';
 import Button from '../components/common/Button';
 import Avatar from '../components/common/Avatar';
 
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../components/common/Toast';
+import { useAuth } from '../context/useAuth.js';
+import { useToast } from '../components/common/useToast.js';
 import { friendService } from '../services/friendService';
 
 import './Friends.css';

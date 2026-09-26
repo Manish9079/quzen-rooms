@@ -4,7 +4,7 @@ import { ArrowLeft, Send, Trash2 } from 'lucide-react';
 
 import Avatar from '../components/common/Avatar';
 import Button from '../components/common/Button';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth.js';
 import { friendService } from '../services/friendService';
 import { directMessageService } from '../services/directMessageService';
 

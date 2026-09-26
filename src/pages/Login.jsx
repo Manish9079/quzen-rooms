@@ -4,7 +4,7 @@ import { LogIn, ArrowRight, Mail, Lock } from 'lucide-react';
 import { Field, TextInput } from '../components/common/Field';
 import Button from '../components/common/Button';
 import Orb from '../components/common/Orb';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth.js';
 import './FormPage.css';
 
 export default function Login() {

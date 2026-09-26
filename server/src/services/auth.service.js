@@ -25,7 +25,8 @@ export async function registerUser({ username, displayName, email, password }) {
     select: publicUserSelect,
   });
 
-  return issueSession(user);
+  const session = await issueSession(user);
+  return session;
 }
 
 export async function loginUser({ identifier, password }) {

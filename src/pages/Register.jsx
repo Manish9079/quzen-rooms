@@ -4,14 +4,22 @@ import { UserPlus, ArrowRight, Mail, Lock, User, AtSign } from 'lucide-react';
 import { Field, TextInput } from '../components/common/Field';
 import Button from '../components/common/Button';
 import Orb from '../components/common/Orb';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth.js';
 import './FormPage.css';
+
+function createConfirmationCode() {
+  const randomValue = new Uint32Array(1);
+  window.crypto.getRandomValues(randomValue);
+  return String(randomValue[0] % 1_000_000).padStart(6, '0');
+}
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ username: '', displayName: '', email: '', password: '' });
+  const [confirmationCode, setConfirmationCode] = useState(createConfirmationCode);
+  const [enteredCode, setEnteredCode] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,17 +32,23 @@ export default function Register() {
     if (!form.username.trim() || !form.displayName.trim() || !form.email.trim() || !form.password) {
       return setError('Fill in every field to create your account.');
     }
-    const strongPassword =
-  /[A-Z]/.test(form.password) &&
-  /[a-z]/.test(form.password) &&
-  /[0-9]/.test(form.password) &&
-  /[^A-Za-z0-9]/.test(form.password);
 
-if (form.password.length < 8 || !strongPassword) {
-  return setError(
-    'Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.'
-  );
-}
+    if (enteredCode.trim() !== confirmationCode) {
+      return setError('The confirmation code does not match.');
+    }
+
+    const strongPassword =
+      /[A-Z]/.test(form.password) &&
+      /[a-z]/.test(form.password) &&
+      /[0-9]/.test(form.password) &&
+      /[^A-Za-z0-9]/.test(form.password);
+
+    if (form.password.length < 8 || !strongPassword) {
+      return setError(
+        'Password must be at least 8 characters and include uppercase, lowercase, number, and symbol.'
+      );
+    }
+
     setError('');
     setSubmitting(true);
     try {
@@ -44,6 +58,7 @@ if (form.password.length < 8 || !strongPassword) {
         email: form.email.trim().toLowerCase(),
         password: form.password,
       });
+
       navigate('/explore', { replace: true });
     } catch (err) {
       setError(err.message || 'Could not create your account. Please try again.');
@@ -59,6 +74,21 @@ if (form.password.length < 8 || !strongPassword) {
           <span className="qz-eyebrow"><UserPlus size={13} /> Join Qyzen Rooms</span>
           <h1>Create your account</h1>
           <p>One account gets you into every room - as a host, a co-host, or just a friendly face in the chat.</p>
+          <div className="qz-code-preview qz-neu" aria-label="Your confirmation code">
+            <span className="qz-code-preview__label">Confirmation code</span>
+            <output className="qz-code-preview__code">{confirmationCode}</output>
+            <button
+              className="qz-code-preview__reroll"
+              type="button"
+              onClick={() => {
+                setConfirmationCode(createConfirmationCode());
+                setEnteredCode('');
+                setError('');
+              }}
+            >
+              New code
+            </button>
+          </div>
           <Orb size={140} className="qz-form-page__orb" />
         </div>
 
@@ -76,6 +106,20 @@ if (form.password.length < 8 || !strongPassword) {
           </div>
           <Field label="Password" required id="password" hint="At least 8 characters.">
             <TextInput id="password" icon={Lock} type="password" placeholder="••••••••" value={form.password} onChange={(e) => update('password', e.target.value)} autoComplete="new-password" />
+          </Field>
+          <Field label="Enter the confirmation code" required id="confirmationCode">
+            <TextInput
+              id="confirmationCode"
+              value={enteredCode}
+              onChange={(e) => {
+                setEnteredCode(e.target.value.replace(/\D/g, '').slice(0, 6));
+                setError('');
+              }}
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={6}
+              aria-label="Enter the six-digit confirmation code"
+            />
           </Field>
 
           {error && <p className="qz-form-error">{error}</p>}

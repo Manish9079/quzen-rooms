@@ -1,14 +1,11 @@
 import {
-  createContext,
-  useContext,
   useState,
   useCallback,
   useEffect,
 } from 'react';
 
+import { AuthContext } from './authContext.js';
 import { authService } from '../services/authService';
-
-const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -39,7 +36,10 @@ export function AuthProvider({ children }) {
 
   const register = useCallback(async (payload) => {
     const result = await authService.register(payload);
-    if (result?.user) setUser(result.user);
+    if (result?.user) {
+      setUser(result.user);
+      return result;
+    }
     return result;
   }, []);
 
@@ -65,16 +65,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-
-  if (!ctx) {
-    throw new Error(
-      'useAuth must be used within an AuthProvider'
-    );
-  }
-
-  return ctx;
 }

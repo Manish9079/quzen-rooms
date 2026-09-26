@@ -6,8 +6,8 @@ import Toggle from '../components/common/Toggle';
 import Button from '../components/common/Button';
 import Orb from '../components/common/Orb';
 import { CATEGORIES } from '../data/categories';
-import { useAuth } from '../context/AuthContext';
-import { useUser } from '../context/UserContext';
+import { useAuth } from '../context/useAuth.js';
+import { useUser } from '../context/useUser.js';
 import { roomService } from '../services/roomService';
 import './FormPage.css';
 

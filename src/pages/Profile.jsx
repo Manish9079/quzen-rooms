@@ -4,11 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { Field, TextInput, TextArea } from '../components/common/Field';
 import Button from '../components/common/Button';
 import Avatar from '../components/common/Avatar';
-import { useAuth } from '../context/AuthContext';
-import { useUser } from '../context/UserContext';
+import { useAuth } from '../context/useAuth.js';
+import { useUser } from '../context/useUser.js';
 import { authService } from '../services/authService';
 import { roomService } from '../services/roomService';
-import { useToast } from '../components/common/Toast';
+import { useToast } from '../components/common/useToast.js';
 import { timeAgo } from '../utils/format';
 import './Profile.css';
 

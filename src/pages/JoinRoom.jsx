@@ -4,12 +4,12 @@ import { KeyRound, ArrowRight, Clock, Lock, Camera, CameraOff, Mic, MicOff, Play
 import { Field, TextInput } from '../components/common/Field';
 import Button from '../components/common/Button';
 import Orb from '../components/common/Orb';
-import { useUser } from '../context/UserContext';
+import { useUser } from '../context/useUser.js';
 import { roomService } from '../services/roomService';
 import { isValidRoomCode, normalizeRoomCode } from '../utils/roomCode';
 import './FormPage.css';
 import './JoinRoom.css';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth.js';
 
 export default function JoinRoom() {
   const navigate = useNavigate();

@@ -1,7 +1,7 @@
 ﻿import { SlidersHorizontal, Mic, Bell, ShieldCheck } from 'lucide-react';
 import Toggle from '../components/common/Toggle';
-import { useUser } from '../context/UserContext';
-import { useToast } from '../components/common/Toast';
+import { useUser } from '../context/useUser.js';
+import { useToast } from '../components/common/useToast.js';
 import './Settings.css';
 
 export default function Settings() {

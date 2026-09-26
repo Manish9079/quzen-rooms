@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { UserContext } from './userContext.js';
 import { getItem, setItem, STORAGE_KEYS } from '../utils/storage';
 
 // Non-sensitive, device-local preferences only. Identity (name, avatar,
@@ -11,8 +12,6 @@ const DEFAULT_SETTINGS = {
   chatSounds: true,
   theme: 'light',
 };
-
-const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
   const [settings, setSettingsState] = useState(() => ({ ...DEFAULT_SETTINGS, ...getItem(STORAGE_KEYS.SETTINGS, {}) }));
@@ -35,10 +34,4 @@ export function UserProvider({ children }) {
   const value = { settings, updateSettings, recentRooms, addRecentRoom };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
-}
-
-export function useUser() {
-  const ctx = useContext(UserContext);
-  if (!ctx) throw new Error('useUser must be used within a UserProvider');
-  return ctx;
 }

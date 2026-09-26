@@ -15,7 +15,6 @@ import Landing from './pages/Landing';
 // Baaki pages demand par load honge
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
-const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 
 const CreateRoom = lazy(() => import('./pages/CreateRoom'));
 const JoinRoom = lazy(() => import('./pages/JoinRoom'));
@@ -113,15 +112,6 @@ export default function App() {
           />
 
           <Route
-            path="/verify-email"
-            element={
-              <Layout footer={false}>
-                <VerifyEmail />
-              </Layout>
-            }
-          />
-
-          <Route
             path="/create"
             element={
               <Layout>
@@ -188,22 +178,17 @@ export default function App() {
           />
 
           <Route
-            path="/room/:code"
+            path="/room/:roomCode"
             element={
-              <ProtectedRoute>
-                <MainRoom />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="*"
-            element={
-              <Layout footer={false}>
-                <NotFound />
+              <Layout>
+                <ProtectedRoute>
+                  <MainRoom />
+                </ProtectedRoute>
               </Layout>
             }
           />
+
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </>
