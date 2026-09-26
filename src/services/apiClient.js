@@ -11,7 +11,10 @@ async function request(path, { method = 'GET', body, retry = true } = {}) {
   let payload = null;
   try { payload = await response.json(); } catch { /* empty response */ }
 
-  if (response.status === 401 && retry && !path.startsWith('/auth/')) {
+  // /auth/me is also protected: restore an existing session when its short-lived
+  // access cookie expires, without retrying login or registration requests.
+  if (response.status === 401 && retry &&
+      (!path.startsWith('/auth/') || path === '/auth/me')) {
     const refreshed = await request('/auth/refresh', { method: 'POST', retry: false }).catch(() => null);
     if (refreshed) return request(path, { method, body, retry: false });
   }
