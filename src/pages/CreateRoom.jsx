@@ -32,26 +32,28 @@ export default function CreateRoom() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!roomName.trim()) return setError('Give your room a name.');
-    if (isPrivate && !password.trim()) return setError('Private rooms need a password.');
+    const trimmedPassword = password.trim();
+    if (isPrivate && trimmedPassword.length < 4) {
+      return setError('Private room passwords must be at least 4 characters.');
+    }
     setError('');
     setSubmitting(true);
 
     try {
-const { room } = await roomService.createRoom(
-  {
-    name: roomName.trim(),
-    description: '',
-    category,
-    isPrivate,
-    password: isPrivate ? password.trim() : '',
-    maxParticipants,
-    chatEnabled,
-    videoEnabled,
-    screenShareEnabled,
-    hostDisplayName: user.displayName,
-  },
-  user.id
-);
+      const payload = {
+        name: roomName.trim(),
+        description: '',
+        category,
+        isPrivate,
+        maxParticipants,
+        chatEnabled,
+        videoEnabled,
+        screenShareEnabled,
+      };
+
+      if (isPrivate) payload.password = trimmedPassword;
+
+      const { room } = await roomService.createRoom(payload);
       addRecentRoom({ name: room.name, code: room.code, createdAgo: room.createdAt });
       navigate(`/room/${room.code}`);
     } catch (err) {
