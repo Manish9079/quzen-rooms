@@ -12,13 +12,13 @@ export default function Footer() {
         </div>
         <div className="qz-footer__cols">
           <div>
-            <h4>Product</h4>
+            <p className="qz-footer__label">Product</p>
             <Link to="/explore">Explore Rooms</Link>
             <Link to="/create">Create Room</Link>
             <Link to="/join">Join Room</Link>
           </div>
           <div>
-            <h4>Account</h4>
+            <p className="qz-footer__label">Account</p>
             <Link to="/profile">Profile</Link>
             <Link to="/settings">Settings</Link>
           </div>

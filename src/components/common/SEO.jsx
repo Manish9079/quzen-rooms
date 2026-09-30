@@ -1,4 +1,5 @@
 ﻿import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 export default function SEO({
   title,
@@ -7,6 +8,8 @@ export default function SEO({
   noindex = false,
   image = 'https://qyzen.online/og-image.png',
 }) {
+  const { pathname } = useLocation();
+
   useEffect(() => {
     const pageUrl =
       canonical || 'https://qyzen.online/';
@@ -122,42 +125,42 @@ export default function SEO({
     );
 
     // Structured Data / JSON-LD
-    let jsonLd = document.querySelector(
-      'script[data-qz-seo="jsonld"]'
-    );
+    const jsonLdSelector = 'script[data-qz-seo="jsonld"]';
+    const jsonLdScripts = document.querySelectorAll(jsonLdSelector);
 
-    if (!jsonLd) {
-      jsonLd = document.createElement('script');
-      jsonLd.type = 'application/ld+json';
-      jsonLd.setAttribute(
-        'data-qz-seo',
-        'jsonld'
-      );
-      document.head.appendChild(jsonLd);
+    if (pathname === '/') {
+      let jsonLd = jsonLdScripts[0];
+
+      if (!jsonLd) {
+        jsonLd = document.createElement('script');
+        jsonLd.type = 'application/ld+json';
+        jsonLd.setAttribute('data-qz-seo', 'jsonld');
+        document.head.appendChild(jsonLd);
+      }
+
+      jsonLdScripts.forEach((script) => {
+        if (script !== jsonLd) script.remove();
+      });
+
+      jsonLd.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'Qyzen Rooms',
+        url: 'https://qyzen.online/',
+        description: 'Create a room on Qyzen Rooms for group video calls, live chat and screen sharing. Invite friends to study together or hang out online.',
+        applicationCategory: 'CommunicationApplication',
+        operatingSystem: 'Web',
+      });
+    } else {
+      jsonLdScripts.forEach((script) => script.remove());
     }
-
-    jsonLd.textContent = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'WebApplication',
-      name: 'Qyzen Rooms',
-      url: 'https://qyzen.online/',
-      description:
-        'Create or join virtual rooms to chat, make video calls and share your screen with friends.',
-      applicationCategory:
-        'CommunicationApplication',
-      operatingSystem: 'Web',
-      offers: {
-        '@type': 'Offer',
-        price: '0',
-        priceCurrency: 'USD',
-      },
-    });
   }, [
     title,
     description,
     canonical,
     noindex,
     image,
+    pathname,
   ]);
 
   return null;

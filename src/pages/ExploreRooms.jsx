@@ -96,8 +96,8 @@ export default function ExploreRooms() {
   return (
     <>
       <SEO
-        title="Explore Public Rooms | Qyzen Rooms"
-        description="Explore public rooms on Qyzen Rooms. Discover study, gaming, music and hangout rooms and join conversations online."
+        title="Public Chat Rooms for Study & Hangouts | Qyzen Rooms"
+        description="Browse public rooms on Qyzen Rooms for studying, gaming, music and hangouts. Find a room for your interests and sign in to join."
         canonical="https://qyzen.online/explore"
       />
 
@@ -109,9 +109,12 @@ export default function ExploreRooms() {
                 Public rooms
               </span>
 
-              <h1>
-                Find a room that's already buzzing
-              </h1>
+              <h1>Explore Public Rooms</h1>
+
+              <p>
+                Browse public rooms for study sessions, gaming, music and online hangouts.
+                Find a room for your interests, then sign in to join the conversation.
+              </p>
             </div>
 
             <TextInput

@@ -21,51 +21,51 @@ import './Landing.css';
 const FEATURES = [
   {
     icon: MessageSquare,
-    title: 'Text chat',
-    desc: 'A realtime side panel for every room - quips, links and reactions without leaving the call.',
+    title: 'Live Text Chat',
+    desc: 'Send messages and share links with people in your room while you talk or join a video call.',
   },
   {
     icon: Mic,
-    title: 'Voice call',
-    desc: 'Talk over crystal-clear audio the moment someone joins, with live speaking indicators.',
+    title: 'Group Voice Calls',
+    desc: 'Talk with friends in your room using voice chat.',
   },
   {
     icon: Video,
-    title: 'Video call',
-    desc: 'A responsive grid that reflows from one face to fifty, on any screen.',
+    title: 'Group Video Calls',
+    desc: 'Connect face to face with friends for online hangouts, study sessions and group conversations.',
   },
   {
     icon: ScreenShare,
-    title: 'Screen share',
-    desc: 'Hand the floor to anyone in one tap - coding, gaming or watching together.',
+    title: 'Screen Sharing',
+    desc: 'Share your screen to explain an idea, review study material or show friends what you are working on.',
   },
   {
     icon: Link2,
-    title: 'Invite links',
-    desc: 'Share a room code or link. Whoever has it, walks straight in.',
+    title: 'Room Links and Codes',
+    desc: 'Invite friends by sharing your room link or code. They can use it to find and join your room.',
   },
   {
     icon: ShieldCheck,
-    title: 'Public or private',
-    desc: 'Open the door to everyone, or lock it with a password just for your circle.',
+    title: 'Public and Private Rooms',
+    desc: 'Choose a public room or use a password-protected room for your group.',
   },
 ];
 
 const STEPS = [
   {
     n: '01',
-    title: 'Create your room',
-    desc: 'Name it, pick who can enter, set a max headcount. Takes fifteen seconds.',
+    title: 'Create Your Room',
+    desc: 'Give your room a name, choose its access settings and set the participant limit.',
   },
   {
     n: '02',
-    title: 'Share the code',
-    desc: 'Send your QZN- room code or a direct link - friends tap in from anywhere.',
+    title: 'Share Your Room Link or Code',
+    desc: 'Send the room link or code to your friends so they can join.',
   },
   {
     n: '03',
-    title: 'Hang out, live',
-    desc: 'Chat, talk, show your screen. The room stays open as long as you do.',
+    title: 'Chat, Call and Share Your Screen',
+    desc: 'Use your room for group conversations, video calls, screen sharing or studying together.',
   },
 ];
 
@@ -105,8 +105,8 @@ export default function Landing() {
   return (
     <>
       <SEO
-        title="Qyzen Rooms | Create, Join & Chat in Virtual Rooms"
-        description="Create or join virtual rooms on Qyzen Rooms. Chat with friends, make video calls, share your screen, study, game and hang out online."
+        title="Video Chat with Friends & Screen Sharing | Qyzen Rooms"
+        description="Create a room on Qyzen Rooms for group video calls, live chat and screen sharing. Invite friends to study together or hang out online."
         canonical="https://qyzen.online/"
       />
 
@@ -120,16 +120,16 @@ export default function Landing() {
               </span>
 
               <h1 className="qz-hero__title">
-                Meet. Talk.
+                Video Chat with Friends.
                 <br />
                 <span className="qz-hero__title-accent">
-                  Share a Space.
+                  Share Your Screen.
                 </span>
               </h1>
 
               <p className="qz-hero__sub">
-                Create a room, invite your people, and connect through
-                video, chat, and screen sharing - all in one place.
+                Create a room, invite your friends, and enjoy group video calls,
+                live chat, and screen sharing. Study together or hang out in one place.
               </p>
 
               <div className="qz-hero__cta">
@@ -203,7 +203,7 @@ export default function Landing() {
               </span>
 
               <h2>
-                Everything a hangout needs, in one room
+                Video Calls, Live Chat and Screen Sharing in One Room
               </h2>
             </div>
 
@@ -237,7 +237,7 @@ export default function Landing() {
                 How it works
               </span>
 
-              <h2>Open a room in three steps</h2>
+              <h2>How to Create a Room and Invite Friends</h2>
             </div>
 
             <div className="qz-steps">
@@ -257,6 +257,64 @@ export default function Landing() {
 
         <section className="qz-section">
           <div className="qz-container">
+            <div className="qz-section__head">
+              <h2>Frequently Asked Questions</h2>
+            </div>
+
+            <div className="qz-feature-grid">
+              <div className="qz-feature-card qz-neu">
+                <h3>What is Qyzen Rooms?</h3>
+                <p>
+                  Qyzen Rooms lets you create and join online rooms for text chat,
+                  voice calls, video calls and screen sharing with your group.
+                </p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>Do I need an account to create or join a room?</h3>
+                <p>
+                  Yes. You need to sign in before creating or joining a room.
+                </p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>How do I invite friends to my room?</h3>
+                <p>
+                  Share your room link or code. Friends need to sign in and use
+                  the join page to enter your room.
+                </p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>Can I create a private room?</h3>
+                <p>
+                  Yes. You can create a password-protected private room. People
+                  joining need the room code or link and the correct password.
+                </p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>Can I share my screen?</h3>
+                <p>
+                  Screen sharing is available when your browser supports it.
+                  You must grant permission when prompted. Availability can
+                  vary by browser and device.
+                </p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>Can I use Qyzen Rooms to study with friends?</h3>
+                <p>
+                  Yes. Create a room, invite your study group, and use chat,
+                  calls and supported screen sharing to discuss study material.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="qz-section">
+          <div className="qz-container">
             <div className="qz-cta-band qz-glass">
               <Orb
                 size={70}
@@ -265,12 +323,11 @@ export default function Landing() {
 
               <div>
                 <h2>
-                  Your people are one code away.
+                  Start a Video Chat with Friends
                 </h2>
 
                 <p>
-                  Spin up a room and drop the link in the
-                  group chat - that's the whole invite.
+                  Create a room and share the link with your group to start chatting, calling and spending time together online.
                 </p>
               </div>
 
