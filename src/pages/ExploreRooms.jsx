@@ -170,6 +170,19 @@ export default function ExploreRooms() {
               <h3>Couldn't load rooms</h3>
               <p>{error}</p>
             </div>
+          ) : rooms.length === 0 && activeCategory === 'ALL' && !query.trim() ? (
+            <div className="qz-explore__empty qz-neu">
+              <h3>No public rooms are open right now.</h3>
+              <p>You can create a room and invite your friends, or check back later.</p>
+
+              <Button
+                onClick={() => navigate('/create')}
+                icon={ArrowRight}
+                iconPosition="right"
+              >
+                Create a Room
+              </Button>
+            </div>
           ) : rooms.length === 0 ? (
             <div className="qz-explore__empty qz-neu">
               <h3>No rooms match that yet</h3>
@@ -273,6 +286,45 @@ export default function ExploreRooms() {
             </div>
           )}
         </div>
+
+        <section className="qz-section">
+          <div className="qz-container">
+            <div className="qz-section__head">
+              <h2>How to Find and Join a Public Room</h2>
+            </div>
+
+            <p>
+              Choose a category to narrow the list, select an available room,
+              and sign in to join the conversation.
+            </p>
+
+            <div className="qz-section__head">
+              <h2>Explore Rooms for Your Interests</h2>
+            </div>
+
+            <div className="qz-feature-grid">
+              <div className="qz-feature-card qz-neu">
+                <h3>Study</h3>
+                <p>Focus on coursework, review material, and work alongside others.</p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>Gaming</h3>
+                <p>Talk through games, plan a team session, or share gaming interests.</p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>Music</h3>
+                <p>Discuss artists, share recommendations, and talk about music.</p>
+              </div>
+
+              <div className="qz-feature-card qz-neu">
+                <h3>Coding</h3>
+                <p>Exchange ideas, collaborate on projects, and work through problems.</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </>
   );
