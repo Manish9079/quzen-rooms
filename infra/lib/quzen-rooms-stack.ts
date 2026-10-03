@@ -32,6 +32,7 @@ export class QuzenRoomsStack extends cdk.Stack {
     const participantsTable = new dynamodb.Table(this, 'ParticipantsTable', tableProps);
     const messagesTable = new dynamodb.Table(this, 'MessagesTable', tableProps);
     const refreshTokensTable = new dynamodb.Table(this, 'RefreshTokensTable', tableProps);
+    const socialTable = new dynamodb.Table(this, 'SocialTable', tableProps);
 
     const userPool = new cognito.UserPool(this, 'UserPool', {
       selfSignUpEnabled: true,
@@ -57,6 +58,7 @@ export class QuzenRoomsStack extends cdk.Stack {
     participantsTable.grantReadWriteData(taskDefinition.taskRole);
     messagesTable.grantReadWriteData(taskDefinition.taskRole);
     refreshTokensTable.grantReadWriteData(taskDefinition.taskRole);
+    socialTable.grantReadWriteData(taskDefinition.taskRole);
 
     const jwtSecret = new secretsmanager.Secret(this, 'JwtSecret', {
       generateSecretString: { passwordLength: 64, excludePunctuation: true },
@@ -81,6 +83,7 @@ export class QuzenRoomsStack extends cdk.Stack {
         DYNAMO_PARTICIPANTS_TABLE: participantsTable.tableName,
         DYNAMO_MESSAGES_TABLE: messagesTable.tableName,
         DYNAMO_REFRESH_TOKENS_TABLE: refreshTokensTable.tableName,
+        DYNAMO_SOCIAL_TABLE: socialTable.tableName,
         COGNITO_USER_POOL_ID: userPool.userPoolId,
         COGNITO_CLIENT_ID: userPoolClient.userPoolClientId,
       },

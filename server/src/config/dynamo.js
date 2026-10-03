@@ -36,8 +36,8 @@ function pick(row, select) {
 
 function matches(row, where = {}) {
   if (!where || typeof where !== 'object') return true;
-  if (where.OR) return where.OR.some((condition) => matches(row, condition));
-  return Object.entries(where).every(([key, expected]) => {
+  if (where.OR && !where.OR.some((condition) => matches(row, condition))) return false;
+  return Object.entries(where).filter(([key]) => key !== 'OR').every(([key, expected]) => {
     if (key === 'roomId_userId') return row.roomId === expected.roomId && row.userId === expected.userId;
     if (expected === null) return row[key] == null;
     if (expected && typeof expected === 'object') {
@@ -114,6 +114,20 @@ function createMemoryModel(_tableName) {
   };
 }
 
+function createTypedModel(model, recordType) {
+  const typedWhere = (where = {}) => ({ ...where, recordType });
+  return {
+    create: ({ data, ...options } = {}) => model.create({ ...options, data: { ...data, recordType } }),
+    findUnique: ({ where, ...options } = {}) => model.findUnique({ ...options, where: typedWhere(where) }),
+    findFirst: ({ where, ...options } = {}) => model.findFirst({ ...options, where: typedWhere(where) }),
+    findMany: ({ where, ...options } = {}) => model.findMany({ ...options, where: typedWhere(where) }),
+    count: ({ where } = {}) => model.count({ where: typedWhere(where) }),
+    update: ({ where, ...options } = {}) => model.update({ ...options, where: typedWhere(where) }),
+    updateMany: ({ where, ...options } = {}) => model.updateMany({ ...options, where: typedWhere(where) }),
+    delete: ({ where } = {}) => model.delete({ where: typedWhere(where) }),
+  };
+}
+
 async function related(row, include) {
   if (!include) return row;
   let result = row;
@@ -148,6 +162,7 @@ function createAwsModel(kind, tableName, documentClient) {
       if (id) {
         const result = await documentClient.send(new GetCommand({ TableName: tableName, Key: { id } }));
         row = result.Item ? decode(result.Item) : null;
+        if (row && !matches(row, where)) row = null;
       } else row = (await allRows(documentClient, tableName)).find((candidate) => matches(candidate, where));
       return row ? pick(await related(row, include), select) : null;
     },
@@ -208,6 +223,7 @@ const tableNames = {
   roomParticipant: env.dynamoTables.participants,
   message: env.dynamoTables.messages,
   refreshToken: env.dynamoTables.refreshTokens,
+  social: env.dynamoTables.social,
 };
 
 const memoryModels = {
@@ -216,6 +232,7 @@ const memoryModels = {
   roomParticipant: createMemoryModel('roomParticipant'),
   message: createMemoryModel('message'),
   refreshToken: createMemoryModel('refreshToken'),
+  social: createMemoryModel('social'),
 };
 
 const awsClient = useMemoryFallback ? null : new DynamoDBClient({ region: env.awsRegion, endpoint: env.dynamoEndpoint });
@@ -227,12 +244,17 @@ const awsModels = awsClient ? {
   roomParticipant: createAwsModel('roomParticipant', tableNames.roomParticipant, documentClient),
   message: createAwsModel('message', tableNames.message, documentClient),
   refreshToken: createAwsModel('refreshToken', tableNames.refreshToken, documentClient),
+  social: createAwsModel('social', tableNames.social, documentClient),
 } : memoryModels;
 
 const models = awsModels;
+const friendshipModel = createTypedModel(models.social, 'friendship');
+const friendRequestModel = createTypedModel(models.social, 'friendRequest');
 
 export const db = {
   ...models,
+  friendship: friendshipModel,
+  friendRequest: friendRequestModel,
   async $transaction(operations) { return Promise.all(operations); },
   async $queryRaw() {
     if (!documentClient) return [{ database: 'memory' }];

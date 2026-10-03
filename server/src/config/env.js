@@ -21,6 +21,7 @@ const requiredDynamoTableKeys = [
   'DYNAMO_PARTICIPANTS_TABLE',
   'DYNAMO_MESSAGES_TABLE',
   'DYNAMO_REFRESH_TOKENS_TABLE',
+  'DYNAMO_SOCIAL_TABLE',
 ];
 
 const missingDynamoTables = isProd
@@ -50,6 +51,7 @@ export const env = {
     participants: process.env.DYNAMO_PARTICIPANTS_TABLE,
     messages: process.env.DYNAMO_MESSAGES_TABLE,
     refreshTokens: process.env.DYNAMO_REFRESH_TOKENS_TABLE,
+    social: process.env.DYNAMO_SOCIAL_TABLE,
   },
 
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET,

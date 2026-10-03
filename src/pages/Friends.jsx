@@ -28,8 +28,8 @@ export default function Friends() {
   const loadFriendsData = useCallback(async () => {
     try {
       const [incoming, friendList] = await Promise.all([
-        friendService.getIncomingRequests(user.id),
-        friendService.getFriends(user.id),
+        friendService.getIncomingRequests(),
+        friendService.getFriends(),
       ]);
 
       setRequests(incoming);
@@ -96,7 +96,7 @@ setUnreadCounts(counts);
     setSearching(true);
 
     try {
-      const users = await friendService.searchUsers(query, user.id);
+      const users = await friendService.searchUsers(query);
       setResults(users);
     } catch (err) {
       showToast(err.message || 'Could not search users.', 'error');
@@ -107,12 +107,12 @@ setUnreadCounts(counts);
 
   async function handleAddFriend(targetUser) {
     try {
-      await friendService.sendFriendRequest(user, targetUser);
+      await friendService.sendFriendRequest(targetUser);
 
       showToast('Friend request sent.');
 
       setResults((prev) =>
-        prev.filter((item) => item.ownerId !== targetUser.ownerId)
+        prev.filter((item) => item.id !== targetUser.id)
       );
     } catch (err) {
       showToast(err.message || 'Could not send friend request.', 'error');
@@ -202,7 +202,7 @@ setUnreadCounts(counts);
 
             <div className="qz-friends__list">
               {results.map((person) => (
-                <div key={person.ownerId} className="qz-friend-card">
+                <div key={person.id} className="qz-friend-card">
                   <Avatar
                     name={person.displayName}
                     color="#16A374"

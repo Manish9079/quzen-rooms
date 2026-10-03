@@ -1,10 +1,10 @@
-﻿import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  Compass,
   MessageSquare,
   Mic,
+  MoreHorizontal,
+  PhoneOff,
   Video,
   ScreenShare,
   Link2,
@@ -14,7 +14,6 @@ import {
 import Button from '../components/common/Button';
 import Orb from '../components/common/Orb';
 import SEO from '../components/common/SEO';
-import { roomService } from '../services/roomService';
 
 import './Landing.css';
 
@@ -70,38 +69,6 @@ const STEPS = [
 ];
 
 export default function Landing() {
-  const [roomActivity, setRoomActivity] = useState({ status: 'loading', count: 0, name: '' });
-
-  useEffect(() => {
-    let active = true;
-
-    roomService.getPublicRooms({ page: 1, limit: 1 })
-      .then((result) => {
-        if (!active) return;
-        setRoomActivity({
-          status: 'ready',
-          count: result.pagination?.total || 0,
-          name: result.rooms?.[0]?.name || '',
-        });
-      })
-      .catch(() => {
-        if (active) setRoomActivity({ status: 'empty', count: 0, name: '' });
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const activityLabel = roomActivity.status === 'loading'
-    ? 'Checking public rooms'
-    : roomActivity.count > 0
-      ? `${roomActivity.count} public room${roomActivity.count === 1 ? '' : 's'} open`
-      : 'No public rooms open yet';
-
-  const activityRoom = roomActivity.name || 'Public room activity';
-  const activityCount = roomActivity.status === 'ready' ? roomActivity.count : '—';
-
   return (
     <>
       <SEO
@@ -120,7 +87,9 @@ export default function Landing() {
               </span>
 
               <h1 className="qz-hero__title">
-                Video Chat with Friends.
+                Video Chat
+                <br />
+                with Friends.
                 <br />
                 <span className="qz-hero__title-accent">
                   Share Your Screen.
@@ -147,50 +116,73 @@ export default function Landing() {
                   as={Link}
                   to="/join"
                   size="lg"
-                  variant="primary"
-                  icon={Compass}
+                  variant="secondary"
+                  icon={Link2}
                 >
                   Join by Link / Code
                 </Button>
               </div>
-
-              <div className="qz-hero__meta">
-                <div className="qz-hero__avatars">
-                  {[
-                    '#16A374',
-                    '#34A99B',
-                    '#3FBE8B',
-                    '#0E8862',
-                  ].map((color) => (
-                    <span
-                      key={color}
-                      style={{ background: color }}
-                    />
-                  ))}
-                </div>
-
-                <span>
-                  Rooms are open across Study, Gaming, Music, and more.
-                </span>
-              </div>
             </div>
 
-            <div className="qz-hero__signal" aria-label="Live room activity">
-              <div className="qz-hero__signal-orbit qz-hero__signal-orbit--one" />
-              <div className="qz-hero__signal-orbit qz-hero__signal-orbit--two" />
-              <div className="qz-hero__signal-core">
-                <span className="qz-hero__signal-live"><i /> Live data</span>
-                <strong>{activityCount}</strong>
-                <span>public rooms</span>
+            <div className="qz-hero__collage" aria-label="Friends studying together with video chat and screen sharing previews">
+              <span className="qz-collage__strokes qz-collage__strokes--top" aria-hidden="true" />
+              <span className="qz-collage__strokes qz-collage__strokes--side" aria-hidden="true" />
+
+              <figure className="qz-collage__main">
+                <img
+                  src="/images/home-study.webp"
+                  alt="Friends gathered around laptops and studying together"
+                  width="1200"
+                  height="900"
+                  fetchPriority="high"
+                />
+              </figure>
+
+              <div className="qz-collage__call" aria-label="Illustrative video-call preview">
+                <img
+                  src="/images/home-call.webp"
+                  alt="A small group collaborating around a laptop"
+                  width="800"
+                  height="600"
+                />
+                <div className="qz-call__toolbar" aria-hidden="true">
+                  <span><Mic size={15} /></span>
+                  <span><Video size={16} /></span>
+                  <span><ScreenShare size={15} /></span>
+                  <span className="qz-call__more"><MoreHorizontal size={17} /></span>
+                  <span className="qz-call__hangup"><PhoneOff size={15} /></span>
+                </div>
               </div>
-              <div className="qz-hero__signal-card qz-hero__signal-card--top">
-                <span className="qz-hero__signal-avatar">+</span>
-                <span>{activityRoom}</span>
+
+              <div className="qz-collage__share" aria-label="Illustrative screen-sharing preview">
+                <div className="qz-share__chrome" aria-hidden="true">
+                  <i /><i /><i />
+                  <span>Screen sharing</span>
+                </div>
+                <img
+                  src="/images/home-sharing.webp"
+                  alt="Friends reviewing study material together in a library"
+                  width="800"
+                  height="600"
+                />
               </div>
-              <div className="qz-hero__signal-card qz-hero__signal-card--bottom">
-                <span className="qz-hero__signal-bars"><i /><i /><i /><i /></span>
-                <span>{activityLabel}</span>
-              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="qz-feature-strip" aria-label="Room features">
+          <div className="qz-container qz-feature-strip__inner">
+            <div className="qz-feature-strip__item">
+              <span className="qz-feature-strip__icon"><Video size={23} strokeWidth={2.2} /></span>
+              <span><strong>Group Video Calls</strong><small>Hang out, study together, or talk about anything.</small></span>
+            </div>
+            <div className="qz-feature-strip__item">
+              <span className="qz-feature-strip__icon"><ScreenShare size={23} strokeWidth={2.2} /></span>
+              <span><strong>Screen Sharing</strong><small>Share your screen to collaborate, present, or watch together.</small></span>
+            </div>
+            <div className="qz-feature-strip__item">
+              <span className="qz-feature-strip__icon"><MessageSquare size={23} strokeWidth={2.2} /></span>
+              <span><strong>Live Chat</strong><small>Keep the conversation going with built-in chat.</small></span>
             </div>
           </div>
         </section>
