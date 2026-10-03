@@ -127,6 +127,9 @@
 }
 
 .qz-ctrl-btn:hover { background: #2b3935; }
+.qz-ctrl-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+.qz-ctrl-btn:focus-visible,
+.qz-ctrl-leave:focus-visible { outline: 2px solid #7dd6ac; outline-offset: 3px; }
 .qz-ctrl-btn--off { background: #202a28; color: #b4c4be; }
 .qz-ctrl-btn--off:hover { background: #2b3935; }
 .qz-ctrl-btn--active { background: #0e8862; border-color: #25b887; }

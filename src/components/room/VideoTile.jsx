@@ -7,9 +7,7 @@ export default function VideoTile({ participant, stream, color, large = false })
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-    }
+    if (videoRef.current) videoRef.current.srcObject = stream || null;
   }, [stream]);
 
   const showVideo =

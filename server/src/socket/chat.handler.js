@@ -17,10 +17,16 @@ export function registerChatHandlers(io, socket) {
           });
         }
 
-        const room = await roomService.joinRoomByCode(roomCode, socket.user.id);
+        const joined = await roomService.joinRoomByCode(roomCode, socket.user.id);
         const roomRecord = await prisma.room.findUnique({ where: { code: roomCode } });
         socket.data.roomId = roomRecord.id;
         socket.data.roomCode = roomCode;
+        socket.data.userId = socket.user.id;
+        socket.data.roomMediaPermissions = {
+          videoEnabled: roomRecord.videoEnabled,
+          screenShareEnabled: roomRecord.screenShareEnabled,
+        };
+        socket.data.mediaState = { micOn: false, cameraOn: false, screenSharing: false };
 
         socket.join(roomCode);
 
@@ -30,7 +36,7 @@ export function registerChatHandlers(io, socket) {
           displayName: socket.user.displayName,
         });
 
-        const participant = room.participant;
+        const participant = joined.participant;
         socket.to(roomCode).emit('presence:userJoined', { participant });
         io.to(roomCode).emit('presence:participantCount', { count: presenceStore.roomSize(roomCode) });
         ack?.({ ok: true, participant });
@@ -93,6 +99,12 @@ export async function completeJoin(io, socket, code, password, options = {}) {
   const room = await prisma.room.findUnique({ where: { code: roomCode } });
   socket.data.roomId = room.id;
   socket.data.roomCode = roomCode;
+  socket.data.userId = socket.user.id;
+  socket.data.roomMediaPermissions = {
+    videoEnabled: room.videoEnabled,
+    screenShareEnabled: room.screenShareEnabled,
+  };
+  socket.data.mediaState = { micOn: false, cameraOn: false, screenSharing: false };
   socket.join(roomCode);
   presenceStore.addToRoom(roomCode, socket.id, {
     userId: socket.user.id,
@@ -111,7 +123,12 @@ function leaveCurrentRoom(socket) {
   if (!roomId) return;
 
   const meta = presenceStore.removeSocket(socket.id);
-  socket.leave(socket.data.roomCode);
+  const roomCode = socket.data.roomCode;
+  socket.to(roomCode).emit('webrtc:peerDisconnected', {
+    socketId: socket.id,
+    userId: socket.data.userId,
+  });
+  socket.leave(roomCode);
   if (meta) {
     socket.to(meta.roomId).emit('presence:userLeft', { userId: meta.userId });
     socket.to(meta.roomId).emit('presence:participantCount', { count: presenceStore.roomSize(meta.roomId) });
@@ -119,4 +136,7 @@ function leaveCurrentRoom(socket) {
 
   socket.data.roomId = null;
   socket.data.roomCode = null;
+  socket.data.userId = null;
+  socket.data.roomMediaPermissions = null;
+  socket.data.mediaState = null;
 }

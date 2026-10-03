@@ -30,6 +30,22 @@ function messageForUi(message, currentUserId) {
   };
 }
 
+function mediaErrorMessage(error, device) {
+  if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+    return `${device} permission was denied. Allow access in your browser's site settings and try again.`;
+  }
+  if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError') {
+    return `No ${device.toLowerCase()} device was found. Connect one and try again.`;
+  }
+  if (error?.name === 'NotReadableError' || error?.name === 'TrackStartError') {
+    return `${device} is already in use by another app. Close that app and try again.`;
+  }
+  if (error?.name === 'OverconstrainedError') {
+    return `The selected ${device.toLowerCase()} is not available with the current settings.`;
+  }
+  return error?.message || `Could not access ${device.toLowerCase()}. Please try again.`;
+}
+
 export default function MainRoom() {
   const { roomCode: code } = useParams();
   const navigate = useNavigate();
@@ -45,6 +61,7 @@ export default function MainRoom() {
   const [socketIdByUserId, setSocketIdByUserId] = useState({});
   const [speakingByUserId, setSpeakingByUserId] = useState({});
   const [remoteStreams, setRemoteStreams] = useState(new Map());
+  const remoteDetectorStopsRef = useRef(new Map());
 
   const [micOn, setMicOn] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
@@ -52,6 +69,8 @@ export default function MainRoom() {
   const [selectedScreenShareUserId, setSelectedScreenShareUserId] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [screenStream, setScreenStream] = useState(null);
+  const [mediaAction, setMediaAction] = useState('');
+  const mediaActionRef = useRef(false);
 
   const [connectionStatus, setConnectionStatus] = useState('connecting');
   const [joinError, setJoinError] = useState('');
@@ -76,6 +95,16 @@ export default function MainRoom() {
   const mySocketIdRef = useRef(null);
   const socketIdByUserIdRef = useRef({});
   useEffect(() => { socketIdByUserIdRef.current = socketIdByUserId; }, [socketIdByUserId]);
+
+  const syncLocalMediaState = useCallback(() => {
+    const state = mediaService.getMediaState();
+    setMicOn(state.micOn);
+    setCameraOn(state.cameraOn);
+    setSharingScreen(state.screenSharing);
+    setLocalStream(state.localStream ? new MediaStream(state.localStream.getTracks()) : null);
+    setScreenStream(state.screenStream);
+    mediaService.broadcastMediaState(state);
+  }, []);
 useEffect(() => {
   if (!waitingForApproval) return undefined;
 
@@ -284,8 +313,10 @@ return () => {
 };
 }, [room?.code, user.id, navigate, showToast, code]);
   useEffect(() => {
-    const cleanupDetectors = [];
+    let cancelled = false;
     socketService.connect();
+    const remoteDetectorStops = remoteDetectorStopsRef.current;
+    mediaService.onLocalMediaChange = syncLocalMediaState;
     const offTyping = socketService.on('chat:typing', ({
   userId,
   username,
@@ -333,21 +364,23 @@ return () => {
     const offPeerOffer = socketService.on('webrtc:offer', ({ from, userId }) => {
       if (userId) setSocketIdByUserId((prev) => ({ ...prev, [userId]: from }));
     });
-    const offPeerDisconnected = socketService.on('webrtc:peerDisconnected', ({ socketId }) => {
-      setRemoteStreams((prev) => { const next = new Map(prev); next.delete(socketId); return next; });
-    });
-
-    mediaService.onRemoteStream = (socketId, stream) => {
-      setRemoteStreams((prev) => new Map(prev).set(socketId, stream));
-      const stop = mediaService.attachSpeakingDetector(stream, (speaking) => {
-        const uid = Object.keys(socketIdByUserIdRef.current).find((id) => socketIdByUserIdRef.current[id] === socketId);
-        if (uid) setSpeakingByUserId((prev) => ({ ...prev, [uid]: speaking }));
-      });
-      cleanupDetectors.push(stop);
-    };
-    mediaService.onPeerLeft = (socketId) => {
-      setRemoteStreams((prev) => { const next = new Map(prev); next.delete(socketId); return next; });
-    };
+    mediaService.onRemoteStream = (socketId, stream, meta) => {
+        setRemoteStreams((prev) => new Map(prev).set(socketId, stream));
+        const uid = meta?.userId || Object.keys(socketIdByUserIdRef.current).find((id) => socketIdByUserIdRef.current[id] === socketId);
+        if (uid) {
+          setSocketIdByUserId((prev) => ({ ...prev, [uid]: socketId }));
+        }
+        remoteDetectorStops.get(socketId)?.();
+        const stopDetector = mediaService.attachSpeakingDetector(stream, (speaking) => {
+          if (uid) setSpeakingByUserId((prev) => ({ ...prev, [uid]: speaking }));
+        });
+        remoteDetectorStops.set(socketId, stopDetector);
+      };
+      mediaService.onPeerLeft = (socketId) => {
+        setRemoteStreams((prev) => { const next = new Map(prev); next.delete(socketId); return next; });
+        remoteDetectorStops.get(socketId)?.();
+        remoteDetectorStops.delete(socketId);
+      };
 
    socketService.emitAck('room:join', {
   code,
@@ -355,6 +388,7 @@ return () => {
   username: user.username,
   displayName: user.displayName,
 }).then((ack) => {
+  if (cancelled) return;
   console.log('room:join ack:', ack);
 
   if (!ack.ok) {
@@ -366,6 +400,7 @@ return () => {
 
   console.log('Starting WebRTC signaling...');
   mediaService.startSignaling();
+  syncLocalMediaState();
 });
   
 
@@ -376,18 +411,22 @@ return () => {
     offMediaState,
     offPeerJoined,
     offPeerOffer,
-    offPeerDisconnected,
     offTyping
   ].forEach((off) => off?.());
 
-  cleanupDetectors.forEach((stop) => stop());
+  cancelled = true;
+  remoteDetectorStops.forEach((stop) => stop());
+  remoteDetectorStops.clear();
 
   socketService.emitAck('room:leave', {});
+  mediaService.onLocalMediaChange = null;
   mediaService.stopAll();
+  mediaService.onRemoteStream = null;
+  mediaService.onPeerLeft = null;
   socketService.disconnect();
 };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code]);
+  }, [code, syncLocalMediaState]);
 
   useEffect(() => {
     if (!localStream) return undefined;
@@ -401,203 +440,72 @@ return () => {
   const canModerate = myParticipant?.role === 'HOST' || myParticipant?.role === 'CO_HOST';
 
   async function handleToggleMic() {
-  try {
-    if (!localStream) {
-      const stream = await mediaService.getCamera({
-        audio: true,
-        video: cameraOn,
-      });
-
-      setLocalStream(stream);
-      setMicOn(true);
-
-      mediaService.broadcastMediaState({
-        micOn: true,
-        cameraOn,
-        screenSharing: sharingScreen,
-      });
-    } else {
-      const next = !micOn;
-      const hasAudioTrack = localStream.getAudioTracks().length > 0;
-
-      if (next && !hasAudioTrack) {
-        await mediaService.addMicrophoneTrack(localStream);
+    if (mediaActionRef.current) return;
+    if (room?.videoEnabled === false) return;
+    mediaActionRef.current = true;
+    setMediaAction('microphone');
+    try {
+      const next = !mediaService.getMediaState().micOn;
+      const audioTrack = mediaService.localStream?.getAudioTracks()
+        .find((track) => track.readyState === 'live');
+      if (next && !audioTrack) {
+        await mediaService.getCamera({ audio: true, video: false });
       } else {
-        mediaService.setTrackEnabled(
-          localStream,
-          'audio',
-          next
-        );
+        mediaService.setTrackEnabled(mediaService.localStream, 'audio', next);
       }
-
-      setMicOn(next);
-
-      mediaService.broadcastMediaState({
-        micOn: next,
-        cameraOn,
-        screenSharing: sharingScreen,
-      });
+      setMediaError('');
+    } catch (error) {
+      setMediaError(mediaErrorMessage(error, 'Microphone'));
+    } finally {
+      mediaActionRef.current = false;
+      setMediaAction('');
     }
-
-    setMediaError('');
-  } catch (err) {
-    console.error('Microphone error:', err);
-
-    setMediaError(
-      "Microphone access was blocked. Allow it in your browser's site settings to talk."
-    );
   }
-}
 
   async function handleToggleCamera() {
-  try {
-    const next = !cameraOn;
-
-    // CAMERA ON
-    if (next) {
-      // No local stream yet
-      if (!localStream) {
-        const stream = await mediaService.getCamera({
-          audio: micOn,
-          video: true,
-        });
-
-        setLocalStream(stream);
+    if (mediaActionRef.current) return;
+    if (room?.videoEnabled === false) return;
+    mediaActionRef.current = true;
+    setMediaAction('camera');
+    try {
+      const next = !mediaService.getMediaState().cameraOn;
+      const videoTrack = mediaService.localStream?.getVideoTracks()
+        .find((track) => track.readyState === 'live');
+      if (next && !videoTrack) {
+        await mediaService.getCamera({ audio: false, video: true });
       } else {
-        const videoTrack = localStream.getVideoTracks()[0];
-
-        if (videoTrack && videoTrack.readyState === 'live') {
-          videoTrack.enabled = true;
-        } else {
-          // Get ONLY camera — do not touch microphone
-          const cameraStream =
-            await navigator.mediaDevices.getUserMedia({
-              video: true,
-              audio: false,
-            });
-
-          const newVideoTrack =
-            cameraStream.getVideoTracks()[0];
-
-          localStream.addTrack(newVideoTrack);
-
-          // Send new camera track to existing peers
-          // Screen share chal rahi ho to remote sender ko camera se replace mat karo
-if (!sharingScreen) {
-  for (const pc of mediaService.peers.values()) {
-    const sender = pc
-      .getSenders()
-      .find((s) => s.track?.kind === 'video');
-
-    if (sender) {
-      await sender.replaceTrack(newVideoTrack);
-    } else {
-      pc.addTrack(newVideoTrack, localStream);
+        mediaService.setTrackEnabled(mediaService.localStream, 'video', next);
+      }
+      setMediaError('');
+    } catch (error) {
+      setMediaError(mediaErrorMessage(error, 'Camera'));
+    } finally {
+      mediaActionRef.current = false;
+      setMediaAction('');
     }
   }
-}
-
-          setLocalStream(
-            new MediaStream(localStream.getTracks())
-          );
-        }
-      }
-
-      setCameraOn(true);
-
-      mediaService.broadcastMediaState({
-        micOn,
-        cameraOn: true,
-        screenSharing: sharingScreen,
-      });
-    }
-
-    // CAMERA OFF
-    else {
-      const videoTrack =
-        localStream?.getVideoTracks()?.[0];
-
-      if (videoTrack) {
-        videoTrack.enabled = false;
-      }
-
-      setCameraOn(false);
-
-      mediaService.broadcastMediaState({
-        micOn,
-        cameraOn: false,
-        screenSharing: sharingScreen,
-      });
-    }
-
-    setMediaError('');
-  } catch (err) {
-    console.error('Camera error:', err);
-
-    setMediaError(
-      "Camera access was blocked. Allow it in your browser's site settings."
-    );
-  }
-}
 
   async function handleToggleShare() {
-  try {
-    // STOP SCREEN SHARE
-    if (sharingScreen) {
-      await mediaService.stopScreenShare();
-
-      setScreenStream(null);
-      setSharingScreen(false);
-
-      mediaService.broadcastMediaState({
-        micOn,
-        cameraOn,
-        screenSharing: false,
-      });
-
+    if (mediaActionRef.current) return;
+    if (room?.screenShareEnabled === false) return;
+    mediaActionRef.current = true;
+    setMediaAction('screen');
+    try {
+      if (mediaService.getMediaState().screenSharing) {
+        await mediaService.stopScreenShare();
+      } else {
+        const stream = await mediaService.getScreenShare();
+        await mediaService.startScreenShare(stream);
+        showToast('Screen sharing started.', 'info');
+      }
       setMediaError('');
-      return;
+    } catch (error) {
+      setMediaError(mediaErrorMessage(error, 'Screen sharing'));
+    } finally {
+      mediaActionRef.current = false;
+      setMediaAction('');
     }
-
-    // START SCREEN SHARE
-    const stream = await mediaService.getScreenShare();
-
-    await mediaService.startScreenShare(stream);
-
-    const screenTrack = stream.getVideoTracks()[0];
-
-    screenTrack.addEventListener('ended', async () => {
-      await mediaService.stopScreenShare();
-
-      setScreenStream(null);
-      setSharingScreen(false);
-
-      mediaService.broadcastMediaState({
-        micOn,
-        cameraOn,
-        screenSharing: false,
-      });
-    });
-
-    setScreenStream(stream);
-    setSharingScreen(true);
-
-    mediaService.broadcastMediaState({
-      micOn,
-      cameraOn,
-      screenSharing: true,
-    });
-
-    showToast('Screen sharing started.', 'info');
-    setMediaError('');
-  } catch (err) {
-    console.error('Screen share error:', err);
-
-    setMediaError(
-      'Could not share your screen. Please allow screen-sharing permission.'
-    );
   }
-}
   // ...upar existing code rahega
 
 
@@ -989,7 +897,7 @@ const typingLabel = useMemo(() => {
       />
 
       {mediaError && (
-        <div className="qz-room__banner">
+        <div className="qz-room__banner" role="alert">
           <MonitorX size={15} strokeWidth={2.3} /> {mediaError}
         </div>
       )}
@@ -1054,6 +962,9 @@ const typingLabel = useMemo(() => {
 
       <ControlBar
         micOn={micOn} cameraOn={cameraOn} sharingScreen={sharingScreen}
+        videoAllowed={room.videoEnabled !== false}
+        screenShareAllowed={room.screenShareEnabled !== false}
+        mediaBusy={Boolean(mediaAction)}
         onToggleMic={handleToggleMic} onToggleCamera={handleToggleCamera} onToggleShare={handleToggleShare}
         onToggleChat={() => { setChatOpen((o) => !o); setParticipantsOpen(false); setUnreadChat(0); }}
         chatOpen={chatOpen} unreadChat={unreadChat}
@@ -1198,9 +1109,7 @@ function ScreenPreview({ stream }) {
   const ref = useRef(null);
 
   useEffect(() => {
-    if (ref.current && stream) {
-      ref.current.srcObject = stream;
-    }
+    if (ref.current) ref.current.srcObject = stream || null;
   }, [stream]);
 
   return (

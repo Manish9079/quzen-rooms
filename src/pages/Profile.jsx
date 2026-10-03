@@ -25,6 +25,7 @@ export default function Profile() {
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
   const [myRooms, setMyRooms] = useState([]);
@@ -63,13 +64,17 @@ useEffect(() => {
 
   async function handleChangePassword(e) {
     e.preventDefault();
+    if (!currentPassword.trim()) return setPasswordError('Current password is required.');
     if (newPassword.length < 8) return setPasswordError('New password must be at least 8 characters.');
+    if (newPassword !== confirmPassword) return setPasswordError('New passwords do not match.');
     setPasswordError('');
     setChangingPassword(true);
     try {
-      await authService.changePassword({ currentPassword, newPassword });
+      await authService.changePassword({ currentPassword, newPassword, confirmPassword });
       showToast('Password changed');
-      setCurrentPassword(''); setNewPassword('');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err) {
       setPasswordError(err.message || 'Could not change your password.');
     } finally {
@@ -107,6 +112,9 @@ useEffect(() => {
             </Field>
             <Field label="New password" id="newPassword" hint="At least 8 characters.">
               <TextInput id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
+            </Field>
+            <Field label="Confirm new password" id="confirmPassword">
+              <TextInput id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
             </Field>
             {passwordError && <p className="qz-form-error">{passwordError}</p>}
             <Button type="submit" variant="secondary" disabled={changingPassword}>

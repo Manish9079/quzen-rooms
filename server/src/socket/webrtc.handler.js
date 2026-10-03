@@ -1,20 +1,37 @@
-/**
- * WebRTC signaling relay only — no media ever touches this server.
- * Clients exchange SDP offers/answers and ICE candidates addressed to a
- * specific peer's socket id; this module just forwards them and announces
- * peer join/leave and mic/camera/screen-share state changes to the room.
- *
- * For rooms beyond ~6-8 participants, replace this full-mesh signaling
- * with a call to an SFU (see the note in the README) — the event names
- * below are deliberately SFU-agnostic so the frontend doesn't need to
- * change when that happens.
- */
+function canSignalPeer(io, socket, targetSocketId) {
+  const roomCode = socket.data.roomCode;
+  if (!roomCode || !targetSocketId || targetSocketId === socket.id) return false;
+  return io.sockets.adapter.rooms.get(roomCode)?.has(targetSocketId) === true;
+}
+
+function sdpAllowed(socket, sdp) {
+  const permissions = socket.data.roomMediaPermissions || {};
+  const description = sdp.sdp || '';
+  if (permissions.videoEnabled === false && /^m=audio\s/m.test(description)) return false;
+  if (permissions.videoEnabled === false && permissions.screenShareEnabled === false &&
+      /^m=video\s/m.test(description)) return false;
+  return true;
+}
+
 export function registerWebrtcHandlers(io, socket) {
-  socket.on('webrtc:ready', () => {
-    if (!socket.data.roomCode) return;
-    // Tell existing peers a new one is ready to negotiate, and tell the
-    // new peer who's already there so it can initiate offers to each.
-    socket.to(socket.data.roomCode).emit('webrtc:peerJoined', {
+  socket.on('webrtc:ready', async () => {
+    const roomCode = socket.data.roomCode;
+    if (!roomCode) return;
+
+    const peers = await io.in(roomCode).fetchSockets();
+    for (const peer of peers) {
+      if (peer.id === socket.id) continue;
+      const state = peer.data.mediaState || {};
+      socket.emit('media:state', {
+        userId: peer.data.userId,
+        socketId: peer.id,
+        micOn: Boolean(state.micOn),
+        cameraOn: Boolean(state.cameraOn),
+        screenSharing: Boolean(state.screenSharing),
+      });
+    }
+
+    socket.to(roomCode).emit('webrtc:peerJoined', {
       socketId: socket.id,
       userId: socket.user.id,
       username: socket.user.username,
@@ -22,28 +39,34 @@ export function registerWebrtcHandlers(io, socket) {
   });
 
   socket.on('webrtc:offer', ({ to, sdp } = {}) => {
-    if (!to || !sdp) return;
+    if (!canSignalPeer(io, socket, to) || !sdp) return;
+    if (!sdpAllowed(socket, sdp)) return;
     io.to(to).emit('webrtc:offer', { from: socket.id, userId: socket.user.id, sdp });
   });
 
   socket.on('webrtc:answer', ({ to, sdp } = {}) => {
-    if (!to || !sdp) return;
+    if (!canSignalPeer(io, socket, to) || !sdp) return;
+    if (!sdpAllowed(socket, sdp)) return;
     io.to(to).emit('webrtc:answer', { from: socket.id, userId: socket.user.id, sdp });
   });
 
   socket.on('webrtc:ice-candidate', ({ to, candidate } = {}) => {
-    if (!to || !candidate) return;
+    if (!canSignalPeer(io, socket, to) || !candidate) return;
     io.to(to).emit('webrtc:ice-candidate', { from: socket.id, candidate });
   });
 
   socket.on('media:state', ({ micOn, cameraOn, screenSharing } = {}) => {
     if (!socket.data.roomCode) return;
+    const permissions = socket.data.roomMediaPermissions || {};
+    socket.data.mediaState = {
+      micOn: Boolean(micOn && permissions.videoEnabled !== false),
+      cameraOn: Boolean(cameraOn && permissions.videoEnabled !== false),
+      screenSharing: Boolean(screenSharing && permissions.screenShareEnabled !== false),
+    };
     socket.to(socket.data.roomCode).emit('media:state', {
       userId: socket.user.id,
       socketId: socket.id,
-      micOn: Boolean(micOn),
-      cameraOn: Boolean(cameraOn),
-      screenSharing: Boolean(screenSharing),
+      ...socket.data.mediaState,
     });
   });
 

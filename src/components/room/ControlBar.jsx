@@ -7,6 +7,7 @@ export default function ControlBar({
   onToggleChat, chatOpen, unreadChat,
   onToggleParticipants, participantsOpen, participantCount,
   onLeave, onEndMeeting, canEndMeeting, onMore,
+  videoAllowed = true, screenShareAllowed = true, mediaBusy = false,
 }) {
   return (
     <div className="qz-control-bar">
@@ -15,17 +16,17 @@ export default function ControlBar({
       </div>
 
       <div className="qz-control-bar__group qz-control-bar__group--center">
-        <button className={`qz-ctrl-btn ${!micOn ? 'qz-ctrl-btn--off' : ''}`} onClick={onToggleMic} aria-pressed={micOn} aria-label={micOn ? 'Mute microphone' : 'Unmute microphone'} title={micOn ? 'Mute microphone' : 'Unmute microphone'}>
+        <button type="button" className={`qz-ctrl-btn ${!micOn ? 'qz-ctrl-btn--off' : ''}`} onClick={onToggleMic} disabled={mediaBusy || !videoAllowed} aria-pressed={micOn} aria-label={micOn ? 'Mute microphone' : 'Unmute microphone'} title={videoAllowed ? (micOn ? 'Mute microphone' : 'Unmute microphone') : 'Voice and video are disabled for this room'}>
           {micOn ? <Mic size={19} strokeWidth={2.2} /> : <MicOff size={19} strokeWidth={2.2} />}
           <span>Mic</span>
         </button>
-        <button className={`qz-ctrl-btn ${!cameraOn ? 'qz-ctrl-btn--off' : ''}`} onClick={onToggleCamera} aria-pressed={cameraOn} aria-label={cameraOn ? 'Turn off camera' : 'Turn on camera'} title={cameraOn ? 'Turn off camera' : 'Turn on camera'}>
+        <button type="button" className={`qz-ctrl-btn ${!cameraOn ? 'qz-ctrl-btn--off' : ''}`} onClick={onToggleCamera} disabled={mediaBusy || !videoAllowed} aria-pressed={cameraOn} aria-label={cameraOn ? 'Turn off camera' : 'Turn on camera'} title={videoAllowed ? (cameraOn ? 'Turn off camera' : 'Turn on camera') : 'Camera is disabled for this room'}>
           {cameraOn ? <Video size={19} strokeWidth={2.2} /> : <VideoOff size={19} strokeWidth={2.2} />}
           <span>Camera</span>
         </button>
-        <button className={`qz-ctrl-btn ${sharingScreen ? 'qz-ctrl-btn--active' : ''}`} onClick={onToggleShare} aria-pressed={sharingScreen} aria-label="Share screen" title="Share screen">
+        <button type="button" className={`qz-ctrl-btn ${sharingScreen ? 'qz-ctrl-btn--active' : ''}`} onClick={onToggleShare} disabled={mediaBusy || !screenShareAllowed} aria-pressed={sharingScreen} aria-label={sharingScreen ? 'Stop sharing screen' : 'Share screen'} title={screenShareAllowed ? (sharingScreen ? 'Stop sharing screen' : 'Share screen') : 'Screen sharing is disabled for this room'}>
           <ScreenShare size={19} strokeWidth={2.2} />
-          <span>Share</span>
+          <span>{sharingScreen ? 'Stop' : 'Share'}</span>
         </button>
         <button className={`qz-ctrl-btn ${chatOpen ? 'qz-ctrl-btn--active' : ''}`} onClick={onToggleChat} aria-pressed={chatOpen} aria-label="Toggle chat" title="Open chat">
           <MessageSquare size={19} strokeWidth={2.2} />
@@ -51,4 +52,3 @@ export default function ControlBar({
     </div>
   );
 }
-
