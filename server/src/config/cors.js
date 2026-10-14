@@ -1,6 +1,7 @@
 import { env } from './env.js';
 
 const allowedOrigins = [
+  'https://qyzen.online',
   env.clientUrl,
   'http://localhost:5173',
   'http://localhost:5174',

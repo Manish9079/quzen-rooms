@@ -12,6 +12,11 @@ export const getIncomingRequests = asyncHandler(async (req, res) => {
   ok(res, { requests });
 });
 
+export const getOutgoingRequests = asyncHandler(async (req, res) => {
+  const requests = await friendService.getOutgoingRequests(req.user.id);
+  ok(res, { requests });
+});
+
 export const sendRequest = asyncHandler(async (req, res) => {
   const request = await friendService.sendRequest(req.user, req.body.toUserId);
   created(res, { request });

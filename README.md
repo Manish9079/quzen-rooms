@@ -62,8 +62,9 @@ between two real connections.
 
 ```
 src/services/
-  authService.js     Amplify Auth register/login/logout/me and email confirmation
-  dataClient.js      configured Amplify Data client for application models
+  authService.js      Express API register/login/logout/session and password flows
+  friendService.js    authenticated friend search, requests, and friendships
+  directMessageService.js authenticated, persisted direct messages + Socket.IO updates
   roomService.js      create/join/leave/delete/update rooms, public explorer, messages history
   socketService.js    shared Socket.IO connection (auth rides the same cookies)
   chatService.js      message send/typing/delete, built on socketService + roomService
@@ -73,7 +74,8 @@ src/services/
 ```
 
 `VITE_API_URL` / `VITE_SOCKET_URL` (see `.env.example`) point these at
-your running backend. For rooms beyond a handful of participants,
+your running backend. Friends, authentication, and direct messages use the
+Express API and the same cookie-based session. For rooms beyond a handful of participants,
 `mediaService.js`'s full mesh is the piece to swap for an SFU client —
 the backend's signaling event names were kept SFU-agnostic for exactly
 that reason (see `server/README.md`).

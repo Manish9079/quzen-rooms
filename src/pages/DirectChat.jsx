@@ -18,6 +18,7 @@ export default function DirectChat() {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const bottomRef = useRef(null);
 const [selectedMessageId, setSelectedMessageId] = useState(null);
   useEffect(() => {
@@ -92,6 +93,12 @@ const [selectedMessageId, setSelectedMessageId] = useState(null);
           user.id,
           userId,
           (message) => {
+            if (message.cleared) {
+              setMessages([]);
+              setSelectedMessageId(null);
+              return;
+            }
+
             setMessages((current) =>
               current.filter(
                 (item) => item.id !== message.id
@@ -129,6 +136,7 @@ const [selectedMessageId, setSelectedMessageId] = useState(null);
       );
     } catch (error) {
       console.error('Could not load chat:', error);
+      setLoadError(error.message || 'Could not load this conversation.');
     } finally {
       setLoading(false);
     }
@@ -228,6 +236,18 @@ async function handleDeleteConversation() {
     return (
       <div className="qz-direct-chat__state">
         Loading chat...
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="qz-direct-chat__state" role="alert">
+        <h2>Could not load this conversation</h2>
+        <p>{loadError}</p>
+        <Button as={Link} to="/friends">
+          Back to Friends
+        </Button>
       </div>
     );
   }

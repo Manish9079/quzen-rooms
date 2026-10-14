@@ -1,5 +1,5 @@
 import { Server } from 'socket.io';
-import { env } from '../config/env.js';
+import { allowedOrigins } from '../config/cors.js';
 import { socketAuthMiddleware } from './socketAuth.js';
 import { registerChatHandlers } from './chat.handler.js';
 import { registerWebrtcHandlers } from './webrtc.handler.js';
@@ -9,12 +9,13 @@ import { registerPresenceHandlers } from './presence.handler.js';
 
 export function initSocket(httpServer) {
   const io = new Server(httpServer, {
-    cors: { origin: env.clientUrl, credentials: true },
+    cors: { origin: allowedOrigins, credentials: true },
   });
 
   io.use(socketAuthMiddleware);
 
   io.on('connection', (socket) => {
+    socket.join(`user:${socket.user.id}`);
     registerChatHandlers(io, socket);
     registerWebrtcHandlers(io, socket);
     registerHostHandlers(io, socket);

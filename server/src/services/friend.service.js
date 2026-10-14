@@ -26,6 +26,13 @@ export async function getIncomingRequests(userId) {
   });
 }
 
+export async function getOutgoingRequests(userId) {
+  return db.friendRequest.findMany({
+    where: { fromUserId: userId, status: 'PENDING' },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
 export async function sendRequest(fromUser, toUserId) {
   if (!toUserId || typeof toUserId !== 'string') {
     throw ApiError.badRequest('Choose a user to add.');

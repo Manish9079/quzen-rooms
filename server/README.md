@@ -72,7 +72,9 @@ before production cutover.
 See `.env.example`. Required: `AWS_REGION`, the five DynamoDB table names,
 and `JWT_ACCESS_SECRET`. Also
 review `CLIENT_URL` (CORS allowlist), `COOKIE_SECURE` (set `true` behind
-HTTPS in production), and the rate-limit maxes.
+HTTPS in production), and the rate-limit maxes. The CORS allowlist always
+includes `https://qyzen.online`; set `CLIENT_URL` for any additional frontend
+origin.
 
 ## Auth model
 
@@ -85,6 +87,11 @@ load and lets the browser attach cookies automatically
 (`credentials: 'include'`). Refresh tokens rotate on every use (the old
 one is revoked); changing your password revokes every outstanding
 session.
+
+Friend requests and direct messages use the Express API's authenticated
+user sessions and DynamoDB tables. Direct messages are stored in the
+configured `DYNAMO_MESSAGES_TABLE`; they do not rely on the Amplify data
+client or Cognito sign-in.
 
 ## Socket.IO events
 

@@ -1,7 +1,13 @@
-import { dataClient } from './dataClient';
+import { apiClient } from './apiClient';
+import { socketService } from './socketService';
 
 function makeConversationId(userAId, userBId) {
   return [userAId, userBId].sort().join('__');
+}
+
+function listen(event, handler) {
+  socketService.connect();
+  return socketService.on(event, handler);
 }
 
 export const directMessageService = {
@@ -9,330 +15,104 @@ export const directMessageService = {
     return makeConversationId(userAId, userBId);
   },
 
-  async getHistory(userAId, userBId) {
-    const conversationId = makeConversationId(userAId, userBId);
-
-    const { data, errors } =
-      await dataClient.models.DirectMessage.list({
-        filter: {
-          conversationId: {
-            eq: conversationId,
-          },
-        },
-      });
-
-    if (errors?.length) {
-      throw new Error(
-        errors[0].message || 'Could not load messages'
-      );
-    }
-
-    return [...data].sort(
-      (a, b) =>
-        new Date(a.createdAt) - new Date(b.createdAt)
+  async getHistory(_userAId, friendId) {
+    const { messages } = await apiClient.get(
+      `/direct-messages/conversations/${encodeURIComponent(friendId)}/messages`
     );
+    return messages;
   },
 
-  async send(sender, receiverId, body) {
+  async send(_sender, receiverId, body) {
     const text = body.trim();
-
     if (!text) return null;
 
-    const conversationId = makeConversationId(
-      sender.id,
-      receiverId
+    const { message } = await apiClient.post(
+      `/direct-messages/conversations/${encodeURIComponent(receiverId)}/messages`,
+      { body: text }
     );
-
-    const { data, errors } =
-      await dataClient.models.DirectMessage.create({
-        conversationId,
-
-        senderId: sender.id,
-        senderDisplayName: sender.displayName,
-
-        receiverId,
-
-        body: text,
-        isRead: false,
-      });
-
-    if (errors?.length) {
-      throw new Error(
-        errors[0].message || 'Could not send message'
-      );
-    }
-
-    return data;
+    return message;
   },
 
   subscribe(userAId, userBId, handler) {
-    const conversationId = makeConversationId(
-      userAId,
-      userBId
-    );
-
-    const subscription =
-      dataClient.models.DirectMessage.onCreate().subscribe({
-        next: (message) => {
-          if (
-            message.conversationId === conversationId
-          ) {
-            handler(message);
-          }
-        },
-
-        error: (err) => {
-          console.error(
-            'Direct message subscription error:',
-            err
-          );
-        },
-      });
-
-    return () => subscription.unsubscribe();
+    const conversationId = makeConversationId(userAId, userBId);
+    return listen('directMessage:created', (message) => {
+      if (message.conversationId === conversationId) handler(message);
+    });
   },
+
   async deleteMessage(messageId) {
-  const { data, errors } =
-    await dataClient.models.DirectMessage.delete({
-      id: messageId,
+    return apiClient.delete(`/direct-messages/messages/${encodeURIComponent(messageId)}`);
+  },
+
+  subscribeToDeleted(userAId, userBId, handler) {
+    const conversationId = makeConversationId(userAId, userBId);
+    const unsubscribeDeleted = listen('directMessage:deleted', (message) => {
+      if (message.conversationId === conversationId) handler(message);
     });
-
-  if (errors?.length) {
-    throw new Error(
-      errors[0].message || 'Could not delete message'
-    );
-  }
-
-  return data;
-},
-
-subscribeToDeleted(userAId, userBId, handler) {
-  const conversationId = makeConversationId(
-    userAId,
-    userBId
-  );
-
-  const subscription =
-    dataClient.models.DirectMessage.onDelete().subscribe({
-      next: (message) => {
-        if (
-          message.conversationId === conversationId
-        ) {
-          handler(message);
-        }
-      },
-
-      error: (err) => {
-        console.error(
-          'Direct message delete subscription error:',
-          err
-        );
-      },
-    });
-
-  return () => subscription.unsubscribe();
-},
-async markConversationAsRead(currentUserId, friendId) {
-  const conversationId = makeConversationId(
-    currentUserId,
-    friendId
-  );
-
-  const { data, errors } =
-    await dataClient.models.DirectMessage.list({
-      filter: {
-        conversationId: {
-          eq: conversationId,
-        },
-      },
-    });
-
-  if (errors?.length) {
-    throw new Error(
-      errors[0].message || 'Could not load unread messages'
-    );
-  }
-
-  const unreadMessages = data.filter(
-    (message) =>
-      message.receiverId === currentUserId &&
-      message.isRead !== true
-  );
-
-  await Promise.all(
-    unreadMessages.map(async (message) => {
-      const { errors: updateErrors } =
-        await dataClient.models.DirectMessage.update({
-          id: message.id,
-          isRead: true,
-        });
-
-      if (updateErrors?.length) {
-        throw new Error(
-          updateErrors[0].message ||
-            'Could not mark message as read'
-        );
+    const unsubscribeCleared = socketService.on('directMessage:cleared', (event) => {
+      if (event.conversationId === conversationId) {
+        handler({ conversationId, cleared: true });
       }
-    })
-  );
-
-  return unreadMessages.length;
-},
-subscribeToUpdates(userAId, userBId, handler) {
-  const conversationId = makeConversationId(
-    userAId,
-    userBId
-  );
-
-  const subscription =
-    dataClient.models.DirectMessage.onUpdate().subscribe({
-      next: (message) => {
-        if (message.conversationId === conversationId) {
-          handler(message);
-        }
-      },
-
-      error: (err) => {
-        console.error(
-          'Direct message update subscription error:',
-          err
-        );
-      },
     });
 
-  return () => subscription.unsubscribe();
-},
-async getUnreadCount(currentUserId, friendId) {
-  const conversationId = makeConversationId(
-    currentUserId,
-    friendId
-  );
+    return () => {
+      unsubscribeDeleted();
+      unsubscribeCleared();
+    };
+  },
 
-  const { data, errors } =
-    await dataClient.models.DirectMessage.list({
-      filter: {
-        conversationId: {
-          eq: conversationId,
-        },
-      },
-    });
-
-  if (errors?.length) {
-    throw new Error(
-      errors[0].message || 'Could not load unread messages'
+  async markConversationAsRead(_currentUserId, friendId) {
+    const { count } = await apiClient.post(
+      `/direct-messages/conversations/${encodeURIComponent(friendId)}/read`
     );
-  }
+    return count;
+  },
 
-  return data.filter(
-    (message) =>
-      message.receiverId === currentUserId &&
-      message.isRead !== true
-  ).length;
-},
-subscribeToAllIncoming(currentUserId, handler) {
-  const subscription =
-    dataClient.models.DirectMessage.onCreate().subscribe({
-      next: (message) => {
-        if (message.receiverId === currentUserId) {
-          handler(message);
-        }
-      },
-
-      error: (err) => {
-        console.error(
-          'Incoming message subscription error:',
-          err
-        );
-      },
+  subscribeToUpdates(userAId, userBId, handler) {
+    const conversationId = makeConversationId(userAId, userBId);
+    return listen('directMessage:updated', (message) => {
+      if (message.conversationId === conversationId) handler(message);
     });
+  },
 
-  return () => subscription.unsubscribe();
-},
-async getTotalUnreadCount(currentUserId) {
-  const { data, errors } =
-    await dataClient.models.DirectMessage.list();
-
-  if (errors?.length) {
-    throw new Error(
-      errors[0].message || 'Could not load unread count'
+  async getUnreadCount(_currentUserId, friendId) {
+    const { count } = await apiClient.get(
+      `/direct-messages/conversations/${encodeURIComponent(friendId)}/unread`
     );
-  }
+    return count;
+  },
 
-  return data.filter(
-    (message) =>
-      message.receiverId === currentUserId &&
-      message.isRead !== true
-  ).length;
-},
-
-subscribeToAllUpdates(currentUserId, handler) {
-  const subscription =
-    dataClient.models.DirectMessage.onUpdate().subscribe({
-      next: (message) => {
-        if (message.receiverId === currentUserId) {
-          handler(message);
-        }
-      },
-
-      error: (err) => {
-        console.error(
-          'Message update subscription error:',
-          err
-        );
-      },
+  subscribeToAllIncoming(currentUserId, handler) {
+    return listen('directMessage:created', (message) => {
+      if (message.receiverId === currentUserId) handler(message);
     });
+  },
 
-  return () => subscription.unsubscribe();
-},
-async deleteConversation(currentUserId, friendId) {
-  const conversationId = makeConversationId(
-    currentUserId,
-    friendId
-  );
+  async getTotalUnreadCount() {
+    const { count } = await apiClient.get('/direct-messages/unread');
+    return count;
+  },
 
-  const { data, errors } =
-    await dataClient.models.DirectMessage.list({
-      filter: {
-        conversationId: {
-          eq: conversationId,
-        },
-      },
-    });
+  subscribeToAllUpdates(currentUserId, handler) {
+    const unsubscriptions = [
+      listen('directMessage:updated', (message) => {
+        if (message.receiverId === currentUserId) handler(message);
+      }),
+      socketService.on('directMessage:deleted', (message) => {
+        if (message.receiverId === currentUserId) handler(message);
+      }),
+      socketService.on('directMessage:cleared', (event) => {
+        if (event.userId === currentUserId) handler(event);
+      }),
+    ];
 
-  if (errors?.length) {
-    throw new Error(
-      errors[0].message || 'Could not load conversation'
+    return () => unsubscriptions.forEach((unsubscribe) => unsubscribe());
+  },
+
+  async deleteConversation(_currentUserId, friendId) {
+    await apiClient.delete(
+      `/direct-messages/conversations/${encodeURIComponent(friendId)}`
     );
-  }
-
-  await Promise.all(
-    data.map(async (message) => {
-      const updatePayload = {
-        id: message.id,
-      };
-
-      if (message.senderId === currentUserId) {
-        updatePayload.deletedForSender = true;
-      }
-
-      if (message.receiverId === currentUserId) {
-        updatePayload.deletedForReceiver = true;
-      }
-
-      const { errors: updateErrors } =
-        await dataClient.models.DirectMessage.update(
-          updatePayload
-        );
-
-      if (updateErrors?.length) {
-        throw new Error(
-          updateErrors[0].message ||
-            'Could not clear conversation'
-        );
-      }
-    })
-  );
-
-  return true;
-},
+    return true;
+  },
 };

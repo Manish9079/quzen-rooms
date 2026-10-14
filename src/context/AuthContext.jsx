@@ -10,14 +10,25 @@ import { authService } from '../services/authService';
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+
+  const restoreSession = useCallback(async () => {
+    setLoading(true);
+    setAuthError(null);
+    try {
+      const { user: current } = await authService.me();
+      setUser(current);
+    } catch (error) {
+      setUser(null);
+      if (error.status !== 401) setAuthError(error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    authService
-      .me()
-      .then(({ user: current }) => setUser(current))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
-  }, []);
+    restoreSession();
+  }, [restoreSession]);
 
   const login = useCallback(async (identifier, password) => {
     const result = await authService.login({
@@ -55,6 +66,8 @@ export function AuthProvider({ children }) {
     user,
     loading,
     isAuthenticated: Boolean(user),
+    authError,
+    restoreSession,
     login,
     register,
     logout,

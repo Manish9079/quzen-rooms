@@ -7,19 +7,11 @@ import Orb from '../components/common/Orb';
 import { useAuth } from '../context/useAuth.js';
 import './FormPage.css';
 
-function createConfirmationCode() {
-  const randomValue = new Uint32Array(1);
-  window.crypto.getRandomValues(randomValue);
-  return String(randomValue[0] % 1_000_000).padStart(6, '0');
-}
-
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ username: '', displayName: '', email: '', password: '' });
-  const [confirmationCode, setConfirmationCode] = useState(createConfirmationCode);
-  const [enteredCode, setEnteredCode] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -31,10 +23,6 @@ export default function Register() {
     e.preventDefault();
     if (!form.username.trim() || !form.displayName.trim() || !form.email.trim() || !form.password) {
       return setError('Fill in every field to create your account.');
-    }
-
-    if (enteredCode.trim() !== confirmationCode) {
-      return setError('The confirmation code does not match.');
     }
 
     const strongPassword =
@@ -74,21 +62,6 @@ export default function Register() {
           <span className="qz-eyebrow"><UserPlus size={13} /> Join Qyzen Rooms</span>
           <h1>Create your account</h1>
           <p>One account gets you into every room - as a host, a co-host, or just a friendly face in the chat.</p>
-          <div className="qz-code-preview qz-neu" aria-label="Your confirmation code">
-            <span className="qz-code-preview__label">Confirmation code</span>
-            <output className="qz-code-preview__code">{confirmationCode}</output>
-            <button
-              className="qz-code-preview__reroll"
-              type="button"
-              onClick={() => {
-                setConfirmationCode(createConfirmationCode());
-                setEnteredCode('');
-                setError('');
-              }}
-            >
-              New code
-            </button>
-          </div>
           <Orb size={140} className="qz-form-page__orb" />
         </div>
 
@@ -107,21 +80,6 @@ export default function Register() {
           <Field label="Password" required id="password" hint="At least 8 characters.">
             <TextInput id="password" icon={Lock} type="password" placeholder="••••••••" value={form.password} onChange={(e) => update('password', e.target.value)} autoComplete="new-password" />
           </Field>
-          <Field label="Enter the confirmation code" required id="confirmationCode">
-            <TextInput
-              id="confirmationCode"
-              value={enteredCode}
-              onChange={(e) => {
-                setEnteredCode(e.target.value.replace(/\D/g, '').slice(0, 6));
-                setError('');
-              }}
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={6}
-              aria-label="Enter the six-digit confirmation code"
-            />
-          </Field>
-
           {error && <p className="qz-form-error">{error}</p>}
 
           <Button type="submit" size="lg" full icon={ArrowRight} iconPosition="right" disabled={submitting}>
@@ -136,4 +94,3 @@ export default function Register() {
     </div>
   );
 }
-

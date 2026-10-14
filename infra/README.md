@@ -72,6 +72,9 @@ The stack keeps `desiredCount=1` and the image tag from context on later deploym
 ## Subsequent API deployments
 
 After the first deployment, push the backend changes to `main`, wait for the GitHub Actions image job to finish, then run the third command in **First deployment order** with the pushed commit SHA as `imageTag`. The same CDK command updates the task definition and rolls the ECS service to that image.
+For this release, keep `desiredCount=1`; the production API currently returns an ALB-generated
+503 when no backend target is healthy. After deployment, confirm the ECS task and target-group
+target are healthy before treating CORS or authentication as verified.
 
 Do not deploy the ALB listener until the ACM certificate is `ISSUED`. The safest first-time flow is to request the certificate separately, add its DNS validation record, wait for issuance, then pass the issued ARN to CDK with `-c certificateArn=...`. If `certificateArn` is omitted, CDK includes a DNS-validated certificate resource in the template for review, but the first deployment may wait on certificate validation before the listener can be created.
 
@@ -115,6 +118,20 @@ HTTPS API:  https://api.qyzen.online/api
 Secure WS:  wss://api.qyzen.online
 Health:     https://api.qyzen.online/api/health
 ```
+
+Verify credentialed CORS after the backend target is healthy:
+
+```bash
+curl -i -X OPTIONS https://api.qyzen.online/api/auth/me \
+  -H 'Origin: https://qyzen.online' \
+  -H 'Access-Control-Request-Method: GET' \
+  -H 'Access-Control-Request-Headers: content-type'
+```
+
+The preflight should return 204 with
+`Access-Control-Allow-Origin: https://qyzen.online` and
+`Access-Control-Allow-Credentials: true`. An unauthenticated
+`GET /api/auth/me` should return 401 with those same CORS headers.
 
 The ALB remains HTTP-capable on port 80 only to issue a permanent redirect to port 443. The ECS container still receives plain HTTP on port 4000 inside the VPC; TLS terminates at the ALB.
 

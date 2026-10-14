@@ -21,18 +21,21 @@ export default function Friends() {
   const [results, setResults] = useState([]);
 
   const [requests, setRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
   const [friends, setFriends] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
   const [loading, setLoading] = useState(true);
 
   const loadFriendsData = useCallback(async () => {
     try {
-      const [incoming, friendList] = await Promise.all([
+      const [incoming, outgoing, friendList] = await Promise.all([
         friendService.getIncomingRequests(),
+        friendService.getOutgoingRequests(),
         friendService.getFriends(),
       ]);
 
       setRequests(incoming);
+      setSentRequests(outgoing);
       setFriends(friendList);
       const counts = {};
 
@@ -114,6 +117,7 @@ setUnreadCounts(counts);
       setResults((prev) =>
         prev.filter((item) => item.id !== targetUser.id)
       );
+      await loadFriendsData();
     } catch (err) {
       showToast(err.message || 'Could not send friend request.', 'error');
     }
@@ -138,9 +142,7 @@ setUnreadCounts(counts);
     try {
       await friendService.rejectFriendRequest(request.id);
 
-      setRequests((prev) =>
-        prev.filter((item) => item.id !== request.id)
-      );
+      await loadFriendsData();
 
       showToast('Friend request rejected.');
     } catch (err) {
@@ -157,11 +159,7 @@ setUnreadCounts(counts);
   try {
     await friendService.removeFriend(friend.friendshipId);
 
-    setFriends((prev) =>
-      prev.filter(
-        (item) => item.friendshipId !== friend.friendshipId
-      )
-    );
+    await loadFriendsData();
 
     showToast('Friend removed.');
   } catch (err) {
@@ -269,6 +267,36 @@ setUnreadCounts(counts);
                     >
                       Reject
                     </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="qz-friends__section">
+          <h2>
+            Sent requests
+            {sentRequests.length > 0 && ` (${sentRequests.length})`}
+          </h2>
+
+          {sentRequests.length === 0 ? (
+            <p className="qz-friends__empty">
+              No pending sent requests.
+            </p>
+          ) : (
+            <div className="qz-friends__list">
+              {sentRequests.map((request) => (
+                <div key={request.id} className="qz-friend-card">
+                  <Avatar
+                    name={request.toDisplayName}
+                    color="#34A99B"
+                    size={44}
+                  />
+
+                  <div className="qz-friend-card__info">
+                    <strong>{request.toDisplayName}</strong>
+                    <span>Friend request pending</span>
                   </div>
                 </div>
               ))}

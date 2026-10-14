@@ -15,6 +15,11 @@ export const friendService = {
     return requests;
   },
 
+  async getOutgoingRequests() {
+    const { requests } = await apiClient.get('/friends/requests/sent');
+    return requests;
+  },
+
   async acceptFriendRequest(request) {
     return apiClient.post(`/friends/requests/${encodeURIComponent(request.id)}/accept`);
   },

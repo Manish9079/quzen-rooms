@@ -6,7 +6,7 @@ import { db } from './config/dynamo.js';
 
 const app = createApp();
 const httpServer = http.createServer(app);
-initSocket(httpServer);
+app.set('io', initSocket(httpServer));
 
 httpServer.listen(env.port, () => {
   // eslint-disable-next-line no-console

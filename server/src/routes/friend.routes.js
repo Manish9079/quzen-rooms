@@ -7,6 +7,7 @@ const router = Router();
 router.use(requireAuth);
 router.get('/users', friendController.searchUsers);
 router.get('/requests', friendController.getIncomingRequests);
+router.get('/requests/sent', friendController.getOutgoingRequests);
 router.post('/requests', friendController.sendRequest);
 router.post('/requests/:requestId/accept', friendController.acceptRequest);
 router.post('/requests/:requestId/reject', friendController.rejectRequest);
