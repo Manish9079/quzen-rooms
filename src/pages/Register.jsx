@@ -7,11 +7,15 @@ import Orb from '../components/common/Orb';
 import { useAuth } from '../context/useAuth.js';
 import './FormPage.css';
 
+const isDevelopment = import.meta.env.DEV;
+const developmentVerificationCode = '123456';
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ username: '', displayName: '', email: '', password: '' });
+  const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,6 +27,10 @@ export default function Register() {
     e.preventDefault();
     if (!form.username.trim() || !form.displayName.trim() || !form.email.trim() || !form.password) {
       return setError('Fill in every field to create your account.');
+    }
+
+    if (isDevelopment && verificationCode !== developmentVerificationCode) {
+      return setError('Enter the development test code 123456.');
     }
 
     const strongPassword =
@@ -80,6 +88,18 @@ export default function Register() {
           <Field label="Password" required id="password" hint="At least 8 characters.">
             <TextInput id="password" icon={Lock} type="password" placeholder="••••••••" value={form.password} onChange={(e) => update('password', e.target.value)} autoComplete="new-password" />
           </Field>
+          {isDevelopment && (
+            <Field label="Development test code" required id="verificationCode" hint="Local testing only. Enter 123456; no email is sent.">
+              <TextInput
+                id="verificationCode"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={6}
+              />
+            </Field>
+          )}
           {error && <p className="qz-form-error">{error}</p>}
 
           <Button type="submit" size="lg" full icon={ArrowRight} iconPosition="right" disabled={submitting}>

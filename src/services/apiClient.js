@@ -1,12 +1,20 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 async function request(path, { method = 'GET', body, retry = true } = {}) {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method,
-    credentials: 'include',
-    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let response;
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      method,
+      credentials: 'include',
+      headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (cause) {
+    const requestError = new Error('Could not reach the Qyzen API. Please try again later.');
+    requestError.status = 0;
+    requestError.cause = cause;
+    throw requestError;
+  }
 
   let payload = null;
   try { payload = await response.json(); } catch { /* empty response */ }
