@@ -72,8 +72,8 @@ export default function Landing() {
   return (
     <>
       <SEO
-        title="Video Chat with Friends & Screen Sharing | Qyzen Rooms"
-        description="Create a room on Qyzen Rooms for group video calls, live chat and screen sharing. Invite friends to study together or hang out online."
+        title="Virtual Rooms Online for Video Chat & Screen Sharing | Qyzen Rooms"
+        description="Create virtual rooms online for video chat with friends, study sessions, and online screen sharing. Hang out online with friends in one room."
         canonical="https://qyzen.online/"
       />
 

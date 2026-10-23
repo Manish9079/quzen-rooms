@@ -147,7 +147,7 @@ export default function SEO({
         '@type': 'WebApplication',
         name: 'Qyzen Rooms',
         url: 'https://qyzen.online/',
-        description: 'Create a room on Qyzen Rooms for group video calls, live chat and screen sharing. Invite friends to study together or hang out online.',
+        description: 'Create virtual rooms online for video chat with friends, study sessions, and online screen sharing. Hang out online with friends in one room.',
         applicationCategory: 'CommunicationApplication',
         operatingSystem: 'Web',
       });
