@@ -163,14 +163,23 @@ class MediaService {
 
   async _syncPeerTrack(kind) {
     const track = this._outgoingTrack(kind);
-    for (const pc of this.peers.values()) {
+    for (const [remoteSocketId, pc] of this.peers) {
       if (pc.connectionState === 'closed') continue;
-      const sender = this._getSender(pc, kind);
+      const transceiver = pc.getTransceivers()
+        .find((current) => current.receiver.track.kind === kind);
+      const sender = transceiver?.sender || this._getSender(pc, kind);
+      let needsNegotiation = false;
       if (sender) {
         if (sender.track !== track) await sender.replaceTrack(track);
+        if (track && transceiver && transceiver.direction !== 'sendrecv') {
+          transceiver.direction = 'sendrecv';
+          needsNegotiation = true;
+        }
       } else if (track) {
         pc.addTrack(track, kind === 'video' && this.screenStream ? this.screenStream : this.localStream);
+        needsNegotiation = true;
       }
+      if (needsNegotiation) await this._negotiate(pc, remoteSocketId);
     }
   }
 
@@ -182,6 +191,10 @@ class MediaService {
     pc._makingOffer = false;
     pc._ignoreOffer = false;
     pc._polite = String(socketService.socket?.id || '') > String(remoteSocketId);
+    pc._negotiationRequested = false;
+    pc._negotiationPromise = null;
+    pc._handlingRemoteOffer = false;
+    pc._iceRestartPending = false;
 
     const outgoingTracks = [
       this._outgoingTrack('audio'),
@@ -202,6 +215,12 @@ class MediaService {
 
     pc.onnegotiationneeded = () => {
       void this._negotiate(pc, remoteSocketId);
+    };
+
+    pc.onsignalingstatechange = () => {
+      if (pc.signalingState === 'stable' && pc._negotiationRequested && !pc._handlingRemoteOffer) {
+        void this._negotiate(pc, remoteSocketId);
+      }
     };
 
     pc.ontrack = ({ track }) => {
@@ -225,9 +244,26 @@ class MediaService {
       this.onRemoteStream?.(remoteSocketId, stream, meta);
     };
 
+    const restartIce = () => {
+      if (pc._iceRestartPending || pc.connectionState === 'closed') return;
+      pc._iceRestartPending = true;
+      pc.restartIce();
+      void this._negotiate(pc, remoteSocketId);
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        pc._iceRestartPending = false;
+      } else if (pc.iceConnectionState === 'failed' && !pc._iceRestartPending) {
+        restartIce();
+      }
+    };
+
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+      if (pc.connectionState === 'closed') {
         this._removePeer(remoteSocketId);
+      } else if (pc.connectionState === 'failed') {
+        restartIce();
       }
     };
 
@@ -236,20 +272,41 @@ class MediaService {
   }
 
   async _negotiate(pc, remoteSocketId) {
+    if (pc.connectionState === 'closed' || !remoteSocketId) return;
+    pc._negotiationRequested = true;
+    if (pc._negotiationPromise) return pc._negotiationPromise;
+
     const sessionId = this.sessionId;
-    if (pc.connectionState === 'closed' || pc.signalingState !== 'stable' || pc._makingOffer) return;
-    pc._makingOffer = true;
-    try {
-      const offer = await pc.createOffer();
-      if (sessionId !== this.sessionId || pc.connectionState === 'closed' || pc.signalingState !== 'stable') return;
-      await pc.setLocalDescription(offer);
-      if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
-      socketService.emit('webrtc:offer', { to: remoteSocketId, sdp: pc.localDescription });
-    } catch (error) {
-      console.error('Could not negotiate a peer connection:', error);
-    } finally {
-      pc._makingOffer = false;
-    }
+    pc._negotiationPromise = (async () => {
+      while (pc._negotiationRequested && sessionId === this.sessionId &&
+          pc.connectionState !== 'closed' && pc.signalingState === 'stable' && !pc._makingOffer) {
+        pc._negotiationRequested = false;
+        pc._makingOffer = true;
+        try {
+          const offer = await pc.createOffer();
+          if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
+          if (pc.signalingState !== 'stable') {
+            pc._negotiationRequested = true;
+            break;
+          }
+          await pc.setLocalDescription(offer);
+          if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
+          socketService.emit('webrtc:offer', { to: remoteSocketId, sdp: pc.localDescription });
+        } catch (error) {
+          console.error('Could not negotiate a peer connection:', error);
+        } finally {
+          pc._makingOffer = false;
+        }
+      }
+    })().finally(() => {
+      pc._negotiationPromise = null;
+      if (pc._negotiationRequested && pc.signalingState === 'stable' &&
+          pc.connectionState !== 'closed' && sessionId === this.sessionId) {
+        void this._negotiate(pc, remoteSocketId);
+      }
+    });
+
+    return pc._negotiationPromise;
   }
 
   async _flushCandidates(remoteSocketId, pc) {
@@ -299,19 +356,27 @@ class MediaService {
     this._listen('webrtc:offer', async ({ from, userId, sdp }) => {
       if (!from || !sdp) return;
       const pc = this._createPeerConnection(from, { userId });
-      const offerCollision = pc._makingOffer || pc.signalingState !== 'stable';
-      pc._ignoreOffer = !pc._polite && offerCollision;
-      if (pc._ignoreOffer) return;
-      if (offerCollision) await pc.setLocalDescription({ type: 'rollback' });
+      pc._handlingRemoteOffer = true;
+      try {
+        const offerCollision = pc._makingOffer || pc.signalingState !== 'stable';
+        pc._ignoreOffer = !pc._polite && offerCollision;
+        if (pc._ignoreOffer) return;
+        if (offerCollision) await pc.setLocalDescription({ type: 'rollback' });
 
-      await pc.setRemoteDescription(sdp);
-      if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
-      await this._flushCandidates(from, pc);
-      const answer = await pc.createAnswer();
-      if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
-      await pc.setLocalDescription(answer);
-      if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
-      socketService.emit('webrtc:answer', { to: from, sdp: pc.localDescription });
+        await pc.setRemoteDescription(sdp);
+        if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
+        await this._flushCandidates(from, pc);
+        const answer = await pc.createAnswer();
+        if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
+        await pc.setLocalDescription(answer);
+        if (sessionId !== this.sessionId || pc.connectionState === 'closed') return;
+        socketService.emit('webrtc:answer', { to: from, sdp: pc.localDescription });
+      } finally {
+        pc._handlingRemoteOffer = false;
+        if (pc._negotiationRequested && pc.signalingState === 'stable' && pc.connectionState !== 'closed') {
+          void this._negotiate(pc, from);
+        }
+      }
     });
 
     this._listen('webrtc:answer', async ({ from, sdp }) => {
