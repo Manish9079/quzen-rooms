@@ -14,6 +14,10 @@ export const authService = {
     return apiClient.patch('/auth/me/password', { currentPassword, newPassword, confirmPassword });
   },
 
+  async updateProfile({ displayName, bio }) {
+    return apiClient.patch('/users/me', { displayName, bio });
+  },
+
   async logout() {
     await apiClient.post('/auth/logout');
   },

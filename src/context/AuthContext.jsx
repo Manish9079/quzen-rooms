@@ -54,6 +54,12 @@ export function AuthProvider({ children }) {
     return result;
   }, []);
 
+  const updateProfile = useCallback(async (patch) => {
+    const { user: updatedUser } = await authService.updateProfile(patch);
+    setUser(updatedUser);
+    return updatedUser;
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await authService.logout();
@@ -70,6 +76,7 @@ export function AuthProvider({ children }) {
     restoreSession,
     login,
     register,
+    updateProfile,
     logout,
   };
 

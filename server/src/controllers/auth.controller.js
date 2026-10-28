@@ -37,7 +37,8 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const me = asyncHandler(async (req, res) => {
-  ok(res, { user: req.user });
+  const user = await authService.getCurrentUser(req.user.id);
+  ok(res, { user });
 });
 
 export const changePassword = asyncHandler(async (req, res) => {

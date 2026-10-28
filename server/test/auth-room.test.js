@@ -58,6 +58,69 @@ test('signup establishes a session, creates a room, and refreshes an expired acc
   assert.equal((await me.json()).data.user.id, user.id);
 });
 
+test('profile updates persist for the authenticated user only', async () => {
+  const suffix = Date.now();
+  async function register(username) {
+    const response = await fetch(`${baseUrl}/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: `${username}@example.com`,
+        username,
+        displayName: 'Original Name',
+        password: 'Correct#Password123',
+      }),
+    });
+    assert.equal(response.status, 201, await response.text());
+    const cookie = response.headers.getSetCookie()
+      .map((header) => header.split(';')[0])
+      .find((value) => value.startsWith('accessToken='));
+    assert.ok(cookie);
+    return cookie;
+  }
+
+  const firstUserCookie = await register(`profile${suffix}`);
+  const secondUserCookie = await register(`other${suffix}`);
+  const update = await fetch(`${baseUrl}/users/me`, {
+    method: 'PATCH',
+    headers: {
+      'content-type': 'application/json',
+      cookie: firstUserCookie,
+    },
+    body: JSON.stringify({ displayName: 'Updated Name', bio: 'A saved bio.' }),
+  });
+  assert.equal(update.status, 200);
+  const updatedUser = (await update.json()).data.user;
+  assert.equal(updatedUser.displayName, 'Updated Name');
+  assert.equal(updatedUser.bio, 'A saved bio.');
+
+  const firstUser = await fetch(`${baseUrl}/auth/me`, {
+    headers: { cookie: firstUserCookie },
+  });
+  assert.equal(firstUser.status, 200);
+  const savedUser = (await firstUser.json()).data.user;
+  assert.equal(savedUser.displayName, 'Updated Name');
+  assert.equal(savedUser.bio, 'A saved bio.');
+
+  const secondUser = await fetch(`${baseUrl}/auth/me`, {
+    headers: { cookie: secondUserCookie },
+  });
+  assert.equal(secondUser.status, 200);
+  const unchangedUser = (await secondUser.json()).data.user;
+  assert.equal(unchangedUser.displayName, 'Original Name');
+  assert.equal(unchangedUser.bio, undefined);
+
+  const invalidUpdate = await fetch(`${baseUrl}/users/me`, {
+    method: 'PATCH',
+    headers: {
+      'content-type': 'application/json',
+      cookie: firstUserCookie,
+    },
+    body: JSON.stringify({ displayName: '   ' }),
+  });
+  assert.equal(invalidUpdate.status, 400);
+});
+
 test('password changes require the current password, match confirmation, and replace the account login', async () => {
   const register = await fetch(`${baseUrl}/auth/register`, {
     method: 'POST',

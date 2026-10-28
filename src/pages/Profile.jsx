@@ -51,9 +51,15 @@ useEffect(() => {
 }, [user.id]);
   async function handleSaveProfile(e) {
     e.preventDefault();
+    const nextDisplayName = displayName.trim();
+    if (!nextDisplayName) {
+      showToast('Display name is required.', 'error');
+      return;
+    }
+
     setSaving(true);
     try {
-      await updateProfile({ displayName: displayName.trim() || user.displayName, bio: bio.trim() || null });
+      await updateProfile({ displayName: nextDisplayName, bio: bio.trim() || null });
       showToast('Profile updated');
     } catch (err) {
       showToast(err.message || 'Could not update your profile.', 'error');

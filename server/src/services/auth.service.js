@@ -44,6 +44,13 @@ export async function loginUser({ identifier, password }) {
   return issueSession(publicUser);
 }
 
+export async function getCurrentUser(userId) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: publicUserSelect,
+  });
+}
+
 /** Creates an access token + a freshly stored refresh token for a user. */
 export async function issueSession(user, userAgent) {
   const accessToken = signAccessToken(user);
