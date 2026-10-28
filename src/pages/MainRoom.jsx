@@ -52,7 +52,7 @@ export default function MainRoom() {
   const location = useLocation();
   const showToast = useToast();
   const { user } = useAuth();
-  const { addRecentRoom } = useUser();
+  const { addRecentRoom, settings } = useUser();
 
   const [room, setRoom] = useState(null);
   const [participants, setParticipants] = useState([]);
@@ -73,6 +73,8 @@ export default function MainRoom() {
   const mediaActionRef = useRef(false);
 
   const [connectionStatus, setConnectionStatus] = useState('connecting');
+  const [mediaRoomCode, setMediaRoomCode] = useState(null);
+  const autoStartedMediaRoomRef = useRef(null);
   const [joinError, setJoinError] = useState('');
   const [waitingForApproval, setWaitingForApproval] = useState(
   location.state?.waiting === true
@@ -398,6 +400,7 @@ return () => {
     return;
   }
 
+  setMediaRoomCode(code);
   console.log('Starting WebRTC signaling...');
   mediaService.startSignaling();
   syncLocalMediaState();
@@ -427,6 +430,39 @@ return () => {
 };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code, syncLocalMediaState]);
+
+  useEffect(() => {
+    if (!room?.code || mediaRoomCode !== room.code ||
+        autoStartedMediaRoomRef.current === room.code) return;
+
+    autoStartedMediaRoomRef.current = room.code;
+    if (room.videoEnabled === false) return;
+    if (!settings.micOnJoin && !settings.cameraOnJoin) return;
+
+    async function startPreferredDevices() {
+      const failures = [];
+
+      if (settings.micOnJoin) {
+        try {
+          await mediaService.getCamera({ audio: true, video: false });
+        } catch (error) {
+          failures.push(mediaErrorMessage(error, 'Microphone'));
+        }
+      }
+
+      if (settings.cameraOnJoin) {
+        try {
+          await mediaService.getCamera({ audio: false, video: true });
+        } catch (error) {
+          failures.push(mediaErrorMessage(error, 'Camera'));
+        }
+      }
+
+      setMediaError(failures.join(' '));
+    }
+
+    startPreferredDevices();
+  }, [room?.code, room?.videoEnabled, mediaRoomCode, settings.micOnJoin, settings.cameraOnJoin]);
 
   useEffect(() => {
     if (!localStream) return undefined;
