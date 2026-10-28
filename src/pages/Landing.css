@@ -644,43 +644,46 @@ min-height: 260px;
 
 @media (max-width: 600px) {
   .qz-landing .qz-hero {
-    padding: 25px 0 20px;
+    padding: 12px 0 12px;
   }
 
   .qz-landing .qz-hero__inner {
-    gap: 19px;
+    gap: 8px;
   }
 
   .qz-landing .qz-hero__copy .qz-eyebrow {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     font-size: 10px;
   }
 
   .qz-landing .qz-hero__title {
-    font-size: clamp(40px, 11vw, 54px);
-    line-height: 0.99;
+    font-size: clamp(30px, 9.2vw, 36px);
+    line-height: 0.98;
   }
 
   .qz-landing .qz-hero__sub {
-    margin-top: 14px;
-    font-size: 15px;
-    line-height: 1.55;
+    margin-top: 10px;
+    font-size: 12.5px;
+    line-height: 1.45;
   }
 
   .qz-landing .qz-hero__cta {
-    gap: 9px;
-    margin-top: 18px;
+    gap: 8px;
+    margin-top: 11px;
   }
 
   .qz-landing .qz-hero__cta .qz-btn {
-    min-height: 48px;
-    padding: 12px 16px;
-    font-size: 13px;
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    gap: 5px;
+    padding: 10px 6px;
+    font-size: clamp(10px, 3vw, 12px);
   }
 
   .qz-landing .qz-hero__collage {
     width: calc(100% - 10px);
-    aspect-ratio: 1.12;
+    aspect-ratio: 2;
     margin: 0 auto;
   }
 
@@ -746,30 +749,44 @@ min-height: 260px;
   }
 
   .qz-landing .qz-feature-strip__inner {
-    grid-template-columns: 1fr;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    padding-top: 5px;
+    padding-bottom: 6px;
   }
 
   .qz-landing .qz-feature-strip__item {
-    gap: 14px;
-    padding: 10px 4px;
+    gap: 3px;
+    padding: 6px 4px;
+    border: 1px solid rgba(46, 61, 53, 0.1);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.72);
   }
 
   .qz-landing .qz-feature-strip__item + .qz-feature-strip__item {
-    border-top: 1px solid rgba(46, 61, 53, 0.1);
-    border-left: 0;
+    border: 1px solid rgba(46, 61, 53, 0.1);
   }
 
   .qz-landing .qz-feature-strip__icon {
-    width: 48px;
-    height: 48px;
-    flex-basis: 48px;
-    border-radius: 14px;
+    width: 22px;
+    height: 22px;
+    flex-basis: 22px;
+    border-radius: 8px;
+  }
+
+  .qz-landing .qz-feature-strip__icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .qz-landing .qz-feature-strip__item strong {
+    font-size: 9.5px;
+    line-height: 1.25;
   }
 
   .qz-landing .qz-feature-strip__item small {
-    font-size: 12px;
+    font-size: 9px;
+    line-height: 1.15;
   }
 
   .qz-landing .qz-section {

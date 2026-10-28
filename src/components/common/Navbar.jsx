@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { NavLink, Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Compass, Plus, LogIn, LogOut, UserPlus, Users } from 'lucide-react';
+import { Menu, X, Home, Compass, Plus, LogIn, LogOut, UserPlus, Users, UserRound } from 'lucide-react';
 import Logo from './Logo';
 import Button from './Button';
 import Avatar from './Avatar';
@@ -12,6 +12,13 @@ import './Navbar.css';
 const LINKS = [
   { to: '/explore', label: 'Explore Rooms', icon: Compass },
   { to: '/friends', label: 'Friends', icon: Users },
+];
+
+const MOBILE_LINKS = [
+  { to: '/', label: 'Home', icon: Home, end: true },
+  { to: '/explore', label: 'Explore', icon: Compass },
+  { to: '/friends', label: 'Friends', icon: Users },
+  { to: '/profile', label: 'Profile', icon: UserRound },
 ];
 
 export default function Navbar() {
@@ -143,10 +150,39 @@ export default function Navbar() {
           )}
         </div>
 
+        <Button
+          as={Link}
+          to="/create"
+          variant="primary"
+          size="sm"
+          icon={Plus}
+          className="qz-nav__mobile-create"
+        >
+          Create Room
+        </Button>
+
         <button className="qz-nav__burger" onClick={() => setOpen((o) => !o)} aria-label="Toggle menu" aria-expanded={open}>
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
     </header>
+  );
+}
+
+export function MobileBottomNav() {
+  return (
+    <nav className="qz-mobile-bottom-nav" aria-label="Primary">
+      {MOBILE_LINKS.map(({ to, label, icon: Icon, end }) => (
+        <NavLink
+          key={to}
+          to={to}
+          end={end}
+          className={({ isActive }) => `qz-mobile-bottom-nav__link${isActive ? ' qz-mobile-bottom-nav__link--active' : ''}`}
+        >
+          <Icon size={20} strokeWidth={2} aria-hidden="true" />
+          <span>{label}</span>
+        </NavLink>
+      ))}
+    </nav>
   );
 }
