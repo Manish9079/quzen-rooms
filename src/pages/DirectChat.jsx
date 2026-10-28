@@ -7,12 +7,14 @@ import Button from '../components/common/Button';
 import { useAuth } from '../context/useAuth.js';
 import { friendService } from '../services/friendService';
 import { directMessageService } from '../services/directMessageService';
+import { useToast } from '../components/common/useToast.js';
 
 import './DirectChat.css';
 
 export default function DirectChat() {
   const { userId } = useParams();
   const { user } = useAuth();
+  const showToast = useToast();
 
   const [friend, setFriend] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -192,8 +194,8 @@ const [selectedMessageId, setSelectedMessageId] = useState(null);
   } catch (error) {
     console.error('Could not send message:', error);
 
-    // Sirf actual send fail ho tab text wapas aaye
-    setText(body);
+    setText((current) => current || body);
+    showToast(error.message || 'Could not send message. Please try again.', 'error');
   }
 }
 async function handleDeleteMessage(messageId) {
