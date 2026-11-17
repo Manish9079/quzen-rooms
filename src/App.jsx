@@ -15,6 +15,8 @@ import Landing from './pages/Landing';
 // Baaki pages demand par load honge
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsConditions = lazy(() => import('./pages/TermsConditions'));
 
 const CreateRoom = lazy(() => import('./pages/CreateRoom'));
 const JoinRoom = lazy(() => import('./pages/JoinRoom'));
@@ -34,6 +36,8 @@ function PrivatePageSEO() {
   const publicPages = [
     '/',
     '/explore',
+    '/privacy',
+    '/terms',
   ];
 
   const isPublicPage = publicPages.includes(location.pathname);
@@ -89,6 +93,24 @@ export default function App() {
             element={
               <Layout>
                 <ExploreRooms />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/privacy"
+            element={
+              <Layout>
+                <PrivacyPolicy />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/terms"
+            element={
+              <Layout>
+                <TermsConditions />
               </Layout>
             }
           />

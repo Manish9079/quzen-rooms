@@ -21,6 +21,8 @@ export default function Footer() {
             <p className="qz-footer__label">Account</p>
             <Link to="/profile">Profile</Link>
             <Link to="/settings">Settings</Link>
+            <Link to="/privacy">Privacy Policy</Link>
+            <Link to="/terms">Terms &amp; Conditions</Link>
           </div>
         </div>
       </div>
