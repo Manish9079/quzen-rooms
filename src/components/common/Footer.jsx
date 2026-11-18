@@ -24,6 +24,11 @@ export default function Footer() {
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/terms">Terms &amp; Conditions</Link>
           </div>
+          <div>
+            <p className="qz-footer__label">Qyzen</p>
+            <Link to="/about">About Us</Link>
+            <Link to="/contact">Contact Us</Link>
+          </div>
         </div>
       </div>
       <div className="qz-container qz-footer__bottom">

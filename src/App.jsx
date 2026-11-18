@@ -17,6 +17,8 @@ const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsConditions = lazy(() => import('./pages/TermsConditions'));
+const AboutUs = lazy(() => import('./pages/AboutUs'));
+const ContactUs = lazy(() => import('./pages/ContactUs'));
 
 const CreateRoom = lazy(() => import('./pages/CreateRoom'));
 const JoinRoom = lazy(() => import('./pages/JoinRoom'));
@@ -36,6 +38,8 @@ function PrivatePageSEO() {
   const publicPages = [
     '/',
     '/explore',
+    '/about',
+    '/contact',
     '/privacy',
     '/terms',
   ];
@@ -111,6 +115,24 @@ export default function App() {
             element={
               <Layout>
                 <TermsConditions />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/about"
+            element={
+              <Layout>
+                <AboutUs />
+              </Layout>
+            }
+          />
+
+          <Route
+            path="/contact"
+            element={
+              <Layout>
+                <ContactUs />
               </Layout>
             }
           />
